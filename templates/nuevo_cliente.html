@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>3T Carrier | Nuevo cliente</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/estilos.css') }}">
+</head>
+
+<body class="dashboard-body">
+
+    <aside class="sidebar">
+
+        <div class="sidebar-logo">
+            <img
+                src="{{ url_for('static', filename='css/IMG/logo-3t.png') }}"
+                alt="Logo 3T Carrier"
+            >
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="/dashboard">🏠 Dashboard</a>
+            <a href="/clientes" class="activo">👥 Clientes</a>
+            <a href="/pedidos">📦 Pedidos</a>
+            <a href="/operadores">👷 Operadores</a>
+            <a href="/unidades">🚚 Unidades</a>
+            <a href="/asignaciones">🔗 Asignaciones</a>
+            <a href="/seguimiento">📍 Seguimiento</a>
+            <a href="/incidencias">⚠️ Incidencias</a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="/">Cerrar sesión</a>
+        </div>
+
+    </aside>
+
+    <main class="dashboard-contenido">
+
+        <header class="dashboard-header">
+
+            <div>
+                <h1>Nuevo cliente</h1>
+                <p>Registrar un nuevo cliente en 3T Carrier</p>
+            </div>
+
+            <a href="/clientes" class="boton-secundario">
+                ← Volver
+            </a>
+
+        </header>
+
+        <section class="formulario-contenedor">
+
+            <form class="formulario-cliente">
+
+                <div class="form-grid">
+
+                    <div class="campo-form">
+                        <label for="razon_social">Razón social</label>
+                        <input
+                            type="text"
+                            id="razon_social"
+                            name="razon_social"
+                            placeholder="Ej. Transportes del Norte"
+                            required
+                        >
+                    </div>
+
+                    <div class="campo-form">
+                        <label for="nombre_contacto">Nombre de contacto</label>
+                        <input
+                            type="text"
+                            id="nombre_contacto"
+                            name="nombre_contacto"
+                            placeholder="Ej. Juan Pérez"
+                            required
+                        >
+                    </div>
+
+                    <div class="campo-form">
+                        <label for="telefono">Teléfono</label>
+                        <input
+                            type="text"
+                            id="telefono"
+                            name="telefono"
+                            placeholder="Ej. 81 1234 5678"
+                        >
+                    </div>
+
+                    <div class="campo-form">
+                        <label for="correo">Correo</label>
+                        <input
+                            type="email"
+                            id="correo"
+                            name="correo"
+                            placeholder="correo@empresa.com"
+                        >
+                    </div>
+
+                    <div class="campo-form campo-completo">
+                        <label for="direccion">Dirección</label>
+                        <input
+                            type="text"
+                            id="direccion"
+                            name="direccion"
+                            placeholder="Calle, número, colonia"
+                        >
+                    </div>
+
+                    <div class="campo-form">
+                        <label for="pais">País</label>
+                        <input
+                            type="text"
+                            id="pais"
+                            name="pais"
+                            placeholder="México"
+                        >
+                    </div>
+
+                    <div class="campo-form">
+                        <label for="estado">Estado</label>
+                        <input
+                            type="text"
+                            id="estado"
+                            name="estado"
+                            placeholder="Nuevo León"
+                        >
+                    </div>
+
+                </div>
+
+                <div class="form-acciones">
+
+                    <a href="/clientes" class="boton-cancelar">
+                        Cancelar
+                    </a>
+
+                    <button type="submit" class="boton-guardar">
+                        Guardar cliente
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+    </main>
+
+</body>
+</html>

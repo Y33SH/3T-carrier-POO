@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>3T Carrier | Unidades</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/estilos.css') }}">
+</head>
+
+<body class="dashboard-body">
+
+    <aside class="sidebar">
+
+        <div class="sidebar-logo">
+            <img
+                src="{{ url_for('static', filename='css/IMG/logo-3t.png') }}"
+                alt="Logo 3T Carrier"
+            >
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="/dashboard">🏠 Dashboard</a>
+            <a href="/clientes">👥 Clientes</a>
+            <a href="/pedidos">📦 Pedidos</a>
+            <a href="/operadores">👷 Operadores</a>
+            <a href="/unidades" class="activo">🚚 Unidades</a>
+            <a href="/asignaciones">🔗 Asignaciones</a>
+            <a href="/seguimiento">📍 Seguimiento</a>
+            <a href="/incidencias">⚠️ Incidencias</a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="/">Cerrar sesión</a>
+        </div>
+
+    </aside>
+
+
+    <main class="dashboard-contenido">
+
+        <header class="dashboard-header">
+
+            <div>
+                <h1>Unidades</h1>
+                <p>Administración de la flota de 3T Carrier</p>
+            </div>
+
+            <a href="/nueva-unidad" class="boton-amarillo">
+    + Nueva unidad
+</a>
+        </header>
+
+
+        <section class="tabla-contenedor">
+
+            <div class="tabla-header">
+
+                <div>
+                    <h2>Lista de unidades</h2>
+                    <p>Vehículos registrados en el sistema</p>
+                </div>
+
+                <input
+                    type="text"
+                    class="buscador"
+                    placeholder="Buscar unidad..."
+                >
+
+            </div>
+
+
+            <div class="tabla-responsive">
+
+                <table class="tabla-clientes">
+
+                    <thead>
+
+                        <tr>
+                            <th>ID</th>
+                            <th>No. económico</th>
+                            <th>Placas</th>
+                            <th>Marca</th>
+                            <th>Modelo</th>
+                            <th>Capacidad</th>
+                            <th>Ubicación actual</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for unidad in unidades %}
+
+                        <tr>
+
+                            <td>
+                                {{ unidad.id_unidad }}
+                            </td>
+
+                            <td>
+                                {{ unidad.numero_economico }}
+                            </td>
+
+                            <td>
+                                {{ unidad.placas }}
+                            </td>
+
+                            <td>
+                                {{ unidad.marca }}
+                            </td>
+
+                            <td>
+                                {{ unidad.modelo }}
+                            </td>
+
+                            <td>
+                                {{ unidad.capacidad }}
+                            </td>
+
+                            <td>
+                                {{ unidad.ubicacion_actual }}
+                            </td>
+
+                            <td>
+
+                                {% if unidad.estado == "DISPONIBLE" %}
+
+                                <span class="estado-activo">
+                                    Disponible
+                                </span>
+
+                                {% elif unidad.estado == "EN RUTA" %}
+
+                                <span class="estado-transito">
+                                    En ruta
+                                </span>
+
+                                {% else %}
+
+                                <span class="estado-inactivo">
+                                    {{ unidad.estado }}
+                                </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+                                <button class="btn-tabla">
+                                    Ver
+                                </button>
+                            </td>
+
+                        </tr>
+
+
+                        {% else %}
+
+                        <tr>
+
+                            <td
+                                colspan="9"
+                                class="tabla-vacia"
+                            >
+                                No hay unidades registradas.
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</body>
+</html>

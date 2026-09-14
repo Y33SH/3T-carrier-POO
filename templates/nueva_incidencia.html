@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>3T Carrier | Nueva incidencia</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/estilos.css') }}">
+</head>
+
+<body class="dashboard-body">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="sidebar-logo">
+            <img
+                src="{{ url_for('static', filename='css/IMG/logo-3t.png') }}"
+                alt="Logo 3T Carrier"
+            >
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="/dashboard">🏠 Dashboard</a>
+            <a href="/clientes">👥 Clientes</a>
+            <a href="/pedidos">📦 Pedidos</a>
+            <a href="/operadores">👷 Operadores</a>
+            <a href="/unidades">🚚 Unidades</a>
+            <a href="/asignaciones">🔗 Asignaciones</a>
+            <a href="/seguimiento">📍 Seguimiento</a>
+            <a href="/incidencias" class="activo">⚠️ Incidencias</a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="/">Cerrar sesión</a>
+        </div>
+
+    </aside>
+
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="dashboard-contenido">
+
+        <header class="dashboard-header">
+
+            <div>
+                <h1>Nueva incidencia</h1>
+                <p>Registrar un problema relacionado con un pedido</p>
+            </div>
+
+            <a href="/incidencias" class="boton-secundario">
+                ← Volver
+            </a>
+
+        </header>
+
+
+        <!-- FORMULARIO -->
+        <section class="formulario-contenedor">
+
+            <!-- Después se cambia a method="POST" -->
+            <form>
+
+                <div class="form-grid">
+
+
+                    <!-- PEDIDO -->
+                    <div class="campo-form">
+
+                        <label for="id_pedido">
+                            Pedido relacionado
+                        </label>
+
+                        <select
+                            id="id_pedido"
+                            name="id_pedido"
+                            required
+                        >
+
+                            <option value="">
+                                Seleccionar pedido
+                            </option>
+
+                            {% for pedido in pedidos %}
+
+                            <option value="{{ pedido.id_pedido }}">
+                                {{ pedido.folio }}
+                            </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- TIPO -->
+                    <div class="campo-form">
+
+                        <label for="tipo">
+                            Tipo de incidencia
+                        </label>
+
+                        <select
+                            id="tipo"
+                            name="tipo"
+                            required
+                        >
+
+                            <option value="">
+                                Seleccionar tipo
+                            </option>
+
+                            <option value="MECANICA">
+                                Falla mecánica
+                            </option>
+
+                            <option value="ACCIDENTE">
+                                Accidente
+                            </option>
+
+                            <option value="RETRASO">
+                                Retraso
+                            </option>
+
+                            <option value="RUTA">
+                                Problema de ruta
+                            </option>
+
+                            <option value="MERCANCIA">
+                                Problema con mercancía
+                            </option>
+
+                            <option value="OTRA">
+                                Otra
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- FECHA -->
+                    <div class="campo-form">
+
+                        <label for="fecha_hora">
+                            Fecha y hora
+                        </label>
+
+                        <input
+                            type="datetime-local"
+                            id="fecha_hora"
+                            name="fecha_hora"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- ESTADO -->
+                    <div class="campo-form">
+
+                        <label for="estado">
+                            Estado
+                        </label>
+
+                        <select
+                            id="estado"
+                            name="estado"
+                            required
+                        >
+
+                            <option value="ABIERTA">
+                                Abierta
+                            </option>
+
+                            <option value="EN PROCESO">
+                                En proceso
+                            </option>
+
+                            <option value="RESUELTA">
+                                Resuelta
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- DESCRIPCIÓN -->
+                    <div class="campo-form campo-completo">
+
+                        <label for="descripcion">
+                            Descripción de la incidencia
+                        </label>
+
+                        <textarea
+                            id="descripcion"
+                            name="descripcion"
+                            rows="5"
+                            placeholder="Describe qué ocurrió durante el servicio..."
+                            required
+                        ></textarea>
+
+                    </div>
+
+
+                    <!-- SOLUCIÓN -->
+                    <div class="campo-form campo-completo">
+
+                        <label for="solucion">
+                            Solución
+                        </label>
+
+                        <textarea
+                            id="solucion"
+                            name="solucion"
+                            rows="4"
+                            placeholder="Describe la solución aplicada (opcional)"
+                        ></textarea>
+
+                    </div>
+
+                </div>
+
+
+                <!-- BOTONES -->
+                <div class="form-acciones">
+
+                    <a
+                        href="/incidencias"
+                        class="boton-cancelar"
+                    >
+                        Cancelar
+                    </a>
+
+                    <button
+                        type="submit"
+                        class="boton-guardar"
+                    >
+                        Registrar incidencia
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+    </main>
+
+</body>
+</html>

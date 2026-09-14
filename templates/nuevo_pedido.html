@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>3T Carrier | Nuevo pedido</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/estilos.css') }}">
+</head>
+
+<body class="dashboard-body">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+        <div class="sidebar-logo">
+            <img
+                src="{{ url_for('static', filename='css/IMG/logo-3t.png') }}"
+                alt="Logo 3T Carrier"
+            >
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="/dashboard">🏠 Dashboard</a>
+            <a href="/clientes">👥 Clientes</a>
+            <a href="/pedidos" class="activo">📦 Pedidos</a>
+            <a href="/operadores">👷 Operadores</a>
+            <a href="/unidades">🚚 Unidades</a>
+            <a href="/asignaciones">🔗 Asignaciones</a>
+            <a href="/seguimiento">📍 Seguimiento</a>
+            <a href="/incidencias">⚠️ Incidencias</a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="/">Cerrar sesión</a>
+        </div>
+
+    </aside>
+
+
+    <!-- CONTENIDO -->
+    <main class="dashboard-contenido">
+
+        <header class="dashboard-header">
+
+            <div>
+                <h1>Nuevo pedido</h1>
+                <p>Registrar un nuevo servicio de transporte</p>
+            </div>
+
+            <a href="/pedidos" class="boton-secundario">
+                ← Volver
+            </a>
+
+        </header>
+
+
+        <section class="formulario-contenedor">
+
+            <!-- Después se cambiará a method="POST" -->
+            <form class="formulario-pedido">
+
+                <div class="form-grid">
+
+                    <!-- CLIENTE -->
+                    <div class="campo-form">
+
+                        <label for="id_cliente">
+                            Cliente
+                        </label>
+
+                        <select
+                            id="id_cliente"
+                            name="id_cliente"
+                            required
+                        >
+                            <option value="">
+                                Seleccionar cliente
+                            </option>
+
+                            {% for cliente in clientes %}
+
+                            <option value="{{ cliente.id_cliente }}">
+                                {{ cliente.razon_social }}
+                            </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- TIPO SERVICIO -->
+                    <div class="campo-form">
+
+                        <label for="id_tipo_servicio">
+                            Tipo de servicio
+                        </label>
+
+                        <select
+                            id="id_tipo_servicio"
+                            name="id_tipo_servicio"
+                            required
+                        >
+                            <option value="">
+                                Seleccionar servicio
+                            </option>
+
+                            {% for servicio in servicios %}
+
+                            <option value="{{ servicio.id_tipo_servicio }}">
+                                {{ servicio.nombre }}
+                            </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- FOLIO -->
+                    <div class="campo-form">
+
+                        <label for="folio">
+                            Folio
+                        </label>
+
+                        <input
+                            type="text"
+                            id="folio"
+                            name="folio"
+                            placeholder="Ej. 3TC-0001"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- FECHA -->
+                    <div class="campo-form">
+
+                        <label for="fecha_estimada">
+                            Fecha estimada
+                        </label>
+
+                        <input
+                            type="datetime-local"
+                            id="fecha_estimada"
+                            name="fecha_estimada"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- ORIGEN -->
+                    <div class="campo-form">
+
+                        <label for="origen">
+                            Origen
+                        </label>
+
+                        <input
+                            type="text"
+                            id="origen"
+                            name="origen"
+                            placeholder="Ej. Monterrey, Nuevo León"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- DESTINO -->
+                    <div class="campo-form">
+
+                        <label for="destino">
+                            Destino
+                        </label>
+
+                        <input
+                            type="text"
+                            id="destino"
+                            name="destino"
+                            placeholder="Ej. Saltillo, Coahuila"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- MERCANCÍA -->
+                    <div class="campo-form campo-completo">
+
+                        <label for="mercancia">
+                            Mercancía
+                        </label>
+
+                        <textarea
+                            id="mercancia"
+                            name="mercancia"
+                            placeholder="Descripción de la mercancía"
+                            rows="4"
+                        ></textarea>
+
+                    </div>
+
+
+                    <!-- TARIFA -->
+                    <div class="campo-form">
+
+                        <label for="tarifa">
+                            Tarifa
+                        </label>
+
+                        <input
+                            type="number"
+                            id="tarifa"
+                            name="tarifa"
+                            placeholder="0.00"
+                            min="0"
+                            step="0.01"
+                        >
+
+                    </div>
+
+
+                    <!-- ESTADO -->
+                    <div class="campo-form">
+
+                        <label for="estado">
+                            Estado del pedido
+                        </label>
+
+                        <select
+                            id="estado"
+                            name="estado"
+                            required
+                        >
+                            <option value="REGISTRADO">
+                                Registrado
+                            </option>
+
+                            <option value="ASIGNADO">
+                                Asignado
+                            </option>
+
+                            <option value="EN TRANSITO">
+                                En tránsito
+                            </option>
+
+                            <option value="ENTREGADO">
+                                Entregado
+                            </option>
+
+                            <option value="CANCELADO">
+                                Cancelado
+                            </option>
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-acciones">
+
+                    <a
+                        href="/pedidos"
+                        class="boton-cancelar"
+                    >
+                        Cancelar
+                    </a>
+
+                    <button
+                        type="submit"
+                        class="boton-guardar"
+                    >
+                        Guardar pedido
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+    </main>
+
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>3T Carrier | Pedidos</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/estilos.css') }}">
+</head>
+
+<body class="dashboard-body">
+
+    <aside class="sidebar">
+
+        <div class="sidebar-logo">
+            <img
+                src="{{ url_for('static', filename='css/IMG/logo-3t.png') }}"
+                alt="Logo 3T Carrier"
+            >
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="/dashboard">🏠 Dashboard</a>
+            <a href="/clientes">👥 Clientes</a>
+            <a href="/pedidos" class="activo">📦 Pedidos</a>
+            <a href="/operadores">👷 Operadores</a>
+            <a href="/unidades">🚚 Unidades</a>
+            <a href="/asignaciones">🔗 Asignaciones</a>
+            <a href="/seguimiento">📍 Seguimiento</a>
+            <a href="/incidencias">⚠️ Incidencias</a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="/">Cerrar sesión</a>
+        </div>
+
+    </aside>
+
+
+    <main class="dashboard-contenido">
+
+        <header class="dashboard-header">
+
+            <div>
+                <h1>Pedidos</h1>
+                <p>Gestión de pedidos y servicios de 3T Carrier</p>
+            </div>
+
+            <a href="/nuevo-pedido" class="boton-amarillo">
+                + Nuevo pedido
+            </a>
+
+        </header>
+
+
+        <section class="tabla-contenedor">
+
+            <div class="tabla-header">
+
+                <div>
+                    <h2>Lista de pedidos</h2>
+                    <p>Pedidos registrados en el sistema</p>
+                </div>
+
+                <input
+                    type="text"
+                    class="buscador"
+                    placeholder="Buscar pedido..."
+                >
+
+            </div>
+
+
+            <div class="tabla-responsive">
+
+                <table class="tabla-clientes">
+
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Folio</th>
+                            <th>Cliente</th>
+                            <th>Servicio</th>
+                            <th>Origen</th>
+                            <th>Destino</th>
+                            <th>Tarifa</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        {% for pedido in pedidos %}
+
+                        <tr>
+                            <td>{{ pedido.id_pedido }}</td>
+                            <td>{{ pedido.folio }}</td>
+                            <td>{{ pedido.id_cliente }}</td>
+                            <td>{{ pedido.id_tipo_servicio }}</td>
+                            <td>{{ pedido.origen }}</td>
+                            <td>{{ pedido.destino }}</td>
+                            <td>${{ pedido.tarifa }}</td>
+                            <td>{{ pedido.estado }}</td>
+
+                            <td>
+                                <button class="btn-tabla">
+                                    Ver
+                                </button>
+                            </td>
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+                            <td colspan="9" class="tabla-vacia">
+                                No hay pedidos registrados.
+                            </td>
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</body>
+</html>

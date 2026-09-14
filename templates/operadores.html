@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>3T Carrier | Operadores</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/estilos.css') }}">
+</head>
+
+<body class="dashboard-body">
+
+    <aside class="sidebar">
+
+        <div class="sidebar-logo">
+            <img
+                src="{{ url_for('static', filename='css/IMG/logo-3t.png') }}"
+                alt="Logo 3T Carrier"
+            >
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="/dashboard">🏠 Dashboard</a>
+            <a href="/clientes">👥 Clientes</a>
+            <a href="/pedidos">📦 Pedidos</a>
+            <a href="/operadores" class="activo">👷 Operadores</a>
+            <a href="/unidades">🚚 Unidades</a>
+            <a href="/asignaciones">🔗 Asignaciones</a>
+            <a href="/seguimiento">📍 Seguimiento</a>
+            <a href="/incidencias">⚠️ Incidencias</a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="/">Cerrar sesión</a>
+        </div>
+
+    </aside>
+
+
+    <main class="dashboard-contenido">
+
+        <header class="dashboard-header">
+
+            <div>
+                <h1>Operadores</h1>
+                <p>Administración de operadores de 3T Carrier</p>
+            </div>
+
+           
+
+        </header>
+
+
+        <section class="tabla-contenedor">
+
+            <div class="tabla-header">
+
+                <div>
+                    <h2>Lista de operadores</h2>
+                    <p>Operadores registrados en el sistema</p>
+                </div>
+
+                <input
+                    type="text"
+                    class="buscador"
+                    placeholder="Buscar operador..."
+                >
+
+            </div>
+
+
+            <div class="tabla-responsive">
+
+                <table class="tabla-clientes">
+
+                    <thead>
+
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Teléfono</th>
+                            <th>Número de licencia</th>
+                            <th>Tipo de licencia</th>
+                            <th>Vigencia</th>
+                            <th>Disponibilidad</th>
+                            <th>Horas de servicio</th>
+                            <th>Acciones</th>
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        {% for operador in operadores %}
+
+                        <tr>
+
+                            <td>
+                                {{ operador.id_operador }}
+                            </td>
+
+                            <td>
+                                {{ operador.nombre }}
+                            </td>
+
+                            <td>
+                                {{ operador.telefono }}
+                            </td>
+
+                            <td>
+                                {{ operador.numero_licencia }}
+                            </td>
+
+                            <td>
+                                {{ operador.tipo_licencia }}
+                            </td>
+
+                            <td>
+                                {{ operador.vigencia_licencia }}
+                            </td>
+
+                            <td>
+
+                                {% if operador.disponibilidad %}
+
+                                <span class="estado-activo">
+                                    Disponible
+                                </span>
+
+                                {% else %}
+
+                                <span class="estado-inactivo">
+                                    No disponible
+                                </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+                                {{ operador.horas_servicio }}
+                            </td>
+
+                            <td>
+                                <button class="btn-tabla">
+                                    Ver
+                                </button>
+                            </td>
+
+                        </tr>
+
+
+                        {% else %}
+
+                        <tr>
+
+                            <td
+                                colspan="9"
+                                class="tabla-vacia"
+                            >
+                                No hay operadores registrados.
+                            </td>
+
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</body>
+</html>

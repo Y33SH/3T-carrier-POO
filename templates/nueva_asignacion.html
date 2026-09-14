@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>3T Carrier | Nueva asignación</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/estilos.css') }}">
+</head>
+
+<body class="dashboard-body">
+
+    <aside class="sidebar">
+
+        <div class="sidebar-logo">
+            <img
+                src="{{ url_for('static', filename='css/IMG/logo-3t.png') }}"
+                alt="Logo 3T Carrier"
+            >
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="/dashboard">🏠 Dashboard</a>
+            <a href="/clientes">👥 Clientes</a>
+            <a href="/pedidos">📦 Pedidos</a>
+            <a href="/operadores">👷 Operadores</a>
+            <a href="/unidades">🚚 Unidades</a>
+            <a href="/asignaciones" class="activo">🔗 Asignaciones</a>
+            <a href="/seguimiento">📍 Seguimiento</a>
+            <a href="/incidencias">⚠️ Incidencias</a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="/">Cerrar sesión</a>
+        </div>
+
+    </aside>
+
+
+    <main class="dashboard-contenido">
+
+        <header class="dashboard-header">
+
+            <div>
+                <h1>Nueva asignación</h1>
+                <p>Asignar un pedido a un operador y una unidad</p>
+            </div>
+
+            <a href="/asignaciones" class="boton-secundario">
+                ← Volver
+            </a>
+
+        </header>
+
+
+        <section class="formulario-contenedor">
+
+            <form>
+
+                <div class="form-grid">
+
+                    <div class="campo-form">
+
+                        <label for="id_pedido">
+                            Pedido
+                        </label>
+
+                        <select id="id_pedido" name="id_pedido" required>
+
+                            <option value="">
+                                Seleccionar pedido
+                            </option>
+
+                            {% for pedido in pedidos %}
+
+                            <option value="{{ pedido.id_pedido }}">
+                                {{ pedido.folio }}
+                            </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="campo-form">
+
+                        <label for="id_operador">
+                            Operador
+                        </label>
+
+                        <select id="id_operador" name="id_operador" required>
+
+                            <option value="">
+                                Seleccionar operador
+                            </option>
+
+                            {% for operador in operadores %}
+
+                            <option value="{{ operador.id_operador }}">
+                                {{ operador.nombre }}
+                            </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="campo-form">
+
+                        <label for="id_unidad">
+                            Unidad
+                        </label>
+
+                        <select id="id_unidad" name="id_unidad" required>
+
+                            <option value="">
+                                Seleccionar unidad
+                            </option>
+
+                            {% for unidad in unidades %}
+
+                            <option value="{{ unidad.id_unidad }}">
+                                {{ unidad.numero_economico }}
+                            </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="campo-form">
+
+                        <label for="fecha_asignacion">
+                            Fecha de asignación
+                        </label>
+
+                        <input
+                            type="datetime-local"
+                            id="fecha_asignacion"
+                            name="fecha_asignacion"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="campo-form">
+
+                        <label for="fecha_inicio">
+                            Fecha de inicio
+                        </label>
+
+                        <input
+                            type="datetime-local"
+                            id="fecha_inicio"
+                            name="fecha_inicio"
+                        >
+
+                    </div>
+
+
+                    <div class="campo-form">
+
+                        <label for="fecha_fin">
+                            Fecha de fin
+                        </label>
+
+                        <input
+                            type="datetime-local"
+                            id="fecha_fin"
+                            name="fecha_fin"
+                        >
+
+                    </div>
+
+
+                    <div class="campo-form campo-completo">
+
+                        <label for="estado">
+                            Estado
+                        </label>
+
+                        <select id="estado" name="estado" required>
+
+                            <option value="ASIGNADA">
+                                Asignada
+                            </option>
+
+                            <option value="EN CURSO">
+                                En curso
+                            </option>
+
+                            <option value="FINALIZADA">
+                                Finalizada
+                            </option>
+
+                            <option value="CANCELADA">
+                                Cancelada
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <div class="form-acciones">
+
+                    <a href="/asignaciones" class="boton-cancelar">
+                        Cancelar
+                    </a>
+
+                    <button type="submit" class="boton-guardar">
+                        Guardar asignación
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+    </main>
+
+</body>
+</html>

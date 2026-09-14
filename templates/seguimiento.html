@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>3T Carrier | Seguimiento de flota</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/estilos.css') }}">
+</head>
+
+<body class="dashboard-body">
+
+    <aside class="sidebar">
+
+        <div class="sidebar-logo">
+            <img
+                src="{{ url_for('static', filename='css/IMG/logo-3t.png') }}"
+                alt="Logo 3T Carrier"
+            >
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="/dashboard">🏠 Dashboard</a>
+            <a href="/clientes">👥 Clientes</a>
+            <a href="/pedidos">📦 Pedidos</a>
+            <a href="/operadores">👷 Operadores</a>
+            <a href="/unidades">🚚 Unidades</a>
+            <a href="/asignaciones">🔗 Asignaciones</a>
+            <a href="/seguimiento" class="activo">📍 Seguimiento</a>
+            <a href="/incidencias">⚠️ Incidencias</a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="/">Cerrar sesión</a>
+        </div>
+
+    </aside>
+
+
+    <main class="dashboard-contenido">
+
+        <header class="dashboard-header">
+
+            <div>
+                <h1>Seguimiento de flota</h1>
+                <p>Monitoreo de unidades y pedidos en ruta</p>
+            </div>
+
+            <div class="estado-conexion">
+                <span class="punto-online"></span>
+                Sistema de rastreo activo
+            </div>
+
+        </header>
+
+
+        <!-- RESUMEN -->
+        <section class="estadisticas">
+
+            <div class="stat-card">
+                <p>Unidades en ruta</p>
+                <h3>{{ unidades_ruta|default(0) }}</h3>
+                <span>Actualmente operando</span>
+            </div>
+
+            <div class="stat-card">
+                <p>Entregas en tiempo</p>
+                <h3>{{ entregas_tiempo|default(0) }}</h3>
+                <span>Sin retrasos</span>
+            </div>
+
+            <div class="stat-card">
+                <p>Retrasos</p>
+                <h3>{{ retrasos|default(0) }}</h3>
+                <span>Requieren atención</span>
+            </div>
+
+            <div class="stat-card">
+                <p>Incidencias activas</p>
+                <h3>{{ incidencias_activas|default(0) }}</h3>
+                <span>En rutas actuales</span>
+            </div>
+
+        </section>
+
+
+        <section class="tracking-grid">
+
+            <!-- MAPA -->
+            <div class="mapa-panel">
+
+                <div class="panel-titulo">
+                    <div>
+                        <h2>Mapa de flota</h2>
+                        <p>Ubicación de unidades activas</p>
+                    </div>
+
+                    <select class="filtro-seguimiento">
+                        <option>Todas las unidades</option>
+                        <option>En ruta</option>
+                        <option>Detenidas</option>
+                        <option>Con retraso</option>
+                    </select>
+                </div>
+
+
+                <div class="mapa-placeholder">
+
+                    <div class="mapa-icono">
+                        🗺️
+                    </div>
+
+                    <h3>Mapa GPS</h3>
+
+                    <p>
+                        Aquí se mostrará la ubicación en tiempo real
+                        de las unidades.
+                    </p>
+
+                    <small>
+                        Posteriormente puede integrarse Google Maps,
+                        Mapbox, Leaflet o datos GPS reales.
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <!-- UNIDADES -->
+            <div class="flota-panel">
+
+                <div class="panel-titulo">
+                    <div>
+                        <h2>Flota activa</h2>
+                        <p>Unidades actualmente monitoreadas</p>
+                    </div>
+                </div>
+
+
+                <div class="lista-flota">
+
+                    {% for seguimiento in seguimientos %}
+
+                    <div class="unidad-tracking">
+
+                        <div class="unidad-tracking-header">
+
+                            <div>
+                                <h3>
+                                    🚚 {{ seguimiento.unidad }}
+                                </h3>
+
+                                <p>
+                                    Pedido:
+                                    {{ seguimiento.folio }}
+                                </p>
+                            </div>
+
+                            <span class="estado-activo">
+                                {{ seguimiento.estatus }}
+                            </span>
+
+                        </div>
+
+
+                        <div class="tracking-datos">
+
+                            <div>
+                                <span>Ubicación</span>
+                                <strong>
+                                    {{ seguimiento.ubicacion }}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Velocidad</span>
+                                <strong>
+                                    {{ seguimiento.velocidad }} km/h
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>ETA</span>
+                                <strong>
+                                    {{ seguimiento.eta }}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Operador</span>
+                                <strong>
+                                    {{ seguimiento.operador }}
+                                </strong>
+                            </div>
+
+                        </div>
+
+
+                        <div class="ruta-info">
+
+                            <div class="ruta-punto">
+                                <span class="punto-origen"></span>
+
+                                <div>
+                                    <small>Origen</small>
+                                    <p>{{ seguimiento.origen }}</p>
+                                </div>
+                            </div>
+
+                            <div class="ruta-linea"></div>
+
+                            <div class="ruta-punto">
+                                <span class="punto-destino"></span>
+
+                                <div>
+                                    <small>Destino</small>
+                                    <p>{{ seguimiento.destino }}</p>
+                                </div>
+                            </div>
+
+                        </div>
+
+
+                        <div class="tracking-footer">
+
+                            <span>
+                                Última actualización:
+                                {{ seguimiento.fecha_hora }}
+                            </span>
+
+                            <button class="btn-tabla">
+                                Ver detalle
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    {% else %}
+
+                    <div class="sin-datos-tracking">
+
+                        <div>📡</div>
+
+                        <h3>No hay unidades en seguimiento</h3>
+
+                        <p>
+                            Cuando existan unidades en ruta,
+                            aparecerán aquí.
+                        </p>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</body>
+</html>

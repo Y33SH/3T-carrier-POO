@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>3T Carrier | Incidencias</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/estilos.css') }}">
+</head>
+
+<body class="dashboard-body">
+
+    <aside class="sidebar">
+
+        <div class="sidebar-logo">
+            <img
+                src="{{ url_for('static', filename='css/IMG/logo-3t.png') }}"
+                alt="Logo 3T Carrier"
+            >
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="/dashboard">🏠 Dashboard</a>
+            <a href="/clientes">👥 Clientes</a>
+            <a href="/pedidos">📦 Pedidos</a>
+            <a href="/operadores">👷 Operadores</a>
+            <a href="/unidades">🚚 Unidades</a>
+            <a href="/asignaciones">🔗 Asignaciones</a>
+            <a href="/seguimiento">📍 Seguimiento</a>
+            <a href="/incidencias" class="activo">⚠️ Incidencias</a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="/">Cerrar sesión</a>
+        </div>
+
+    </aside>
+
+    <main class="dashboard-contenido">
+
+        <header class="dashboard-header">
+
+            <div>
+                <h1>Incidencias</h1>
+                <p>Registro y seguimiento de problemas en ruta</p>
+            </div>
+
+         <a href="/nueva-incidencia" class="boton-amarillo">
+    + Nueva incidencia
+</a>
+
+        </header>
+
+        <section class="tabla-contenedor">
+
+            <div class="tabla-header">
+
+                <div>
+                    <h2>Lista de incidencias</h2>
+                    <p>Incidencias registradas en el sistema</p>
+                </div>
+
+                <input
+                    type="text"
+                    class="buscador"
+                    placeholder="Buscar incidencia..."
+                >
+
+            </div>
+
+            <div class="tabla-responsive">
+
+                <table class="tabla-clientes">
+
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Pedido</th>
+                            <th>Tipo</th>
+                            <th>Descripción</th>
+                            <th>Fecha y hora</th>
+                            <th>Estado</th>
+                            <th>Solución</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        {% for incidencia in incidencias %}
+
+                        <tr>
+                            <td>{{ incidencia.id_incidencia }}</td>
+                            <td>{{ incidencia.id_pedido }}</td>
+                            <td>{{ incidencia.tipo }}</td>
+                            <td>{{ incidencia.descripcion }}</td>
+                            <td>{{ incidencia.fecha_hora }}</td>
+
+                            <td>
+                                {% if incidencia.estado == "RESUELTA" %}
+                                    <span class="estado-activo">
+                                        Resuelta
+                                    </span>
+                                {% else %}
+                                    <span class="estado-inactivo">
+                                        {{ incidencia.estado }}
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <td>{{ incidencia.solucion }}</td>
+
+                            <td>
+                                <button class="btn-tabla">
+                                    Ver
+                                </button>
+                            </td>
+                        </tr>
+
+                        {% else %}
+
+                        <tr>
+                            <td colspan="8" class="tabla-vacia">
+                                No hay incidencias registradas.
+                            </td>
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</body>
+</html>
