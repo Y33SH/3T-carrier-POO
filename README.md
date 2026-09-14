@@ -1,6 +1,13 @@
 # 3T Carrier - Sistema de Gestión Logística
 
-Sistema web para administrar las operaciones de **3T Carrier**.
+Sistema web desarrollado con Python, Flask, HTML y CSS para la administración
+de operaciones de 3T Carrier.
+
+El frontend principal ya se encuentra desarrollado. El siguiente paso es
+conectar los módulos con la base de datos y reemplazar los datos temporales
+por información real.
+
+---
 
 ## Tecnologías
 
@@ -9,64 +16,31 @@ Sistema web para administrar las operaciones de **3T Carrier**.
 - HTML
 - CSS
 - SQLAlchemy
-- MySQL
-- PyMySQL
-- Flask-Login
-- python-dotenv
+- Flask-Migrate
+- MySQL (base de datos planeada)
 
-## Estructura
+---
 
-```text
-3T-carrier-POO/
-│
-├── app.py
-├── config.py
-├── models.py
-├── requirements.txt
-├── .env.example
-├── .gitignore
-│
-├── static/
-│   └── css/
-│       ├── estilos.css
-│       └── IMG/
-│
-└── templates/
-    ├── login.html
-    ├── dashboard.html
-    ├── clientes.html
-    ├── nuevo_cliente.html
-    ├── pedidos.html
-    ├── nuevo_pedido.html
-    ├── operadores.html
-    ├── unidades.html
-    ├── asignaciones.html
-    ├── seguimiento.html
-    └── incidencias.html
-```
+## Estructura principal
 
-## Archivos principales
+### app.py
+Contiene las rutas de Flask y conecta las páginas HTML con el backend.
 
-### `app.py`
-Aplicación principal de Flask. Contiene las rutas y será el intermediario entre las páginas HTML y la base de datos.
+Actualmente varias rutas utilizan listas vacías o valores en 0 para permitir
+visualizar el frontend sin tener conectada la base de datos.
 
-### `config.py`
-Configuración de Flask y conexión con MySQL. Las credenciales deben obtenerse desde `.env`.
+### models.py
+Contiene los modelos que representan las entidades de la base de datos.
 
-### `models.py`
-Modelos SQLAlchemy que representan las tablas y relaciones de la base de datos.
+### config.py
+Configuración de Flask y conexión con la base de datos.
 
-### `templates/`
-Interfaces HTML del sistema.
+### templates/
+Contiene las interfaces HTML del sistema.
 
-### `static/`
-CSS, imágenes y demás archivos estáticos.
+Principales módulos:
 
-## Módulos
-
-El sistema contempla:
-
-- Login y usuarios
+- Login
 - Dashboard
 - Clientes
 - Pedidos
@@ -76,138 +50,76 @@ El sistema contempla:
 - Seguimiento
 - Incidencias
 
-## Base de datos
+También existen formularios para registrar nuevos datos.
 
-Base propuesta:
+### static/css/
+Contiene los estilos generales de la aplicación y las imágenes utilizadas.
 
-```text
-BD_GestionLogistica3T
-```
+---
 
-Tablas principales:
+# Estado actual
 
-```text
-Usuarios
-Clientes
-TiposServicio
-Pedidos
-Operadores
-Unidades
-Asignaciones
-Seguimientos
-Incidencias
-```
+## Frontend
 
-Relación general:
+El diseño principal ya está desarrollado.
 
-```text
-Cliente
-   ↓
-Pedido ← TipoServicio
-   ↓
-Asignación
- ├── Operador
- └── Unidad
+Se cuenta con:
 
-Pedido
- ├── Seguimientos
- └── Incidencias
-```
+- Login
+- Dashboard
+- Gestión de clientes
+- Gestión de pedidos
+- Gestión de operadores
+- Gestión de unidades
+- Asignación de operador y unidad a pedidos
+- Seguimiento de flota
+- Gestión de incidencias
 
-## Arquitectura
+El módulo de seguimiento está pensado para evolucionar hacia un sistema de
+rastreo de flotas con mapa, ubicación GPS, velocidad, ETA y estado de ruta.
 
-```text
-HTML/CSS
-   ↓
-Flask (app.py)
-   ↓
-SQLAlchemy (models.py)
-   ↓
-MySQL
-```
+---
 
-## Objetivo de la integración
+# Trabajo pendiente - Backend y Base de Datos
 
-Actualmente existe la interfaz y estructura inicial del sistema.
+## 1. Conectar MySQL
 
-La siguiente etapa es conectar todas las páginas con la base de datos para que los datos sean reales y dinámicos.
+Configurar la conexión real utilizando las variables de entorno.
 
-Se necesita implementar:
+NO subir el archivo `.env` al repositorio.
 
-1. Conexión Flask → MySQL.
-2. Modelos y relaciones SQLAlchemy.
-3. Creación de tablas.
-4. CRUD de clientes.
-5. CRUD de pedidos.
-6. CRUD de operadores.
-7. CRUD de unidades.
-8. Asignaciones de pedido + operador + unidad.
-9. Seguimiento de pedidos.
-10. Registro de incidencias.
-11. Login real con usuarios.
-12. Dashboard calculado con información de la BD.
+Cada desarrollador debe crear su propio `.env` tomando como referencia
+`.env.example`.
 
-El sistema debe evitar datos escritos manualmente en HTML.
+---
 
-Ejemplo:
+## 2. Conectar modelos
+
+Revisar `models.py` y comprobar que los modelos coincidan con las tablas
+definitivas de la base de datos.
+
+Relaciones principales:
+
+Cliente -> Pedido
+
+Pedido -> Asignación
+
+Operador -> Asignación
+
+Unidad -> Asignación
+
+Pedido -> Seguimiento
+
+Pedido -> Incidencia
+
+---
+
+## 3. Reemplazar datos temporales
+
+Actualmente existen secciones como:
 
 ```python
-pedidos = Pedido.query.all()
-return render_template("pedidos.html", pedidos=pedidos)
-```
-
-Y en HTML:
-
-```html
-{% for pedido in pedidos %}
-    {{ pedido.id }}
-{% endfor %}
-```
-
-## Seguridad
-
-NO subir a GitHub:
-
-```text
-.env
-contraseñas
-tokens
-secret keys
-credenciales de MySQL
-```
-
-`.env.example` solamente debe mostrar las variables necesarias:
-
-```env
-SECRET_KEY=
-DB_USER=
-DB_PASSWORD=
-DB_HOST=
-DB_PORT=
-DB_NAME=
-```
-
-Las contraseñas de usuarios tampoco deben almacenarse en texto plano.
-
-## Estado actual
-
-- Frontend: desarrollado
-- Flask: estructura inicial
-- Login visual: desarrollado
-- Dashboard visual: desarrollado
-- Base de datos: pendiente de integración
-- CRUD: pendiente
-- Autenticación real: pendiente
-
-## Instrucción para continuar el proyecto
-
-Antes de modificar código:
-
-1. Analizar todos los archivos existentes.
-2. No reemplazar innecesariamente el frontend actual.
-3. Mantener las rutas y nombres de templates cuando sea posible.
-4. Revisar `app.py`, `config.py` y `models.py`.
-5. Implementar la base de datos por etapas.
-6. Explicar cada modificación antes de realizarla.
-7. Trabajar un módulo a la vez y comprobar que funciona antes de continuar.
-8. Mantener las credenciales fuera del repositorio.
+lista_clientes = []
+lista_pedidos = []
+lista_operadores = []
+lista_unidades = []
