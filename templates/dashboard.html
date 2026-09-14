@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>3T Carrier | Dashboard</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/estilos.css') }}">
+</head>
+
+<body class="dashboard-body">
+
+    <aside class="sidebar">
+
+        <div class="sidebar-logo">
+            <img
+                src="{{ url_for('static', filename='css/IMG/logo-3t.png') }}"
+                alt="Logo 3T Carrier"
+            >
+        </div>
+
+        <nav class="sidebar-menu">
+
+            <a href="/dashboard" class="activo">
+                🏠 Dashboard
+            </a>
+
+            <a href="/clientes">
+                👥 Clientes
+            </a>
+
+            <a href="/pedidos">
+                📦 Pedidos
+            </a>
+
+            <a href="/operadores">
+                👷 Operadores
+            </a>
+
+            <a href="/unidades">
+                🚚 Unidades
+            </a>
+
+            <a href="/asignaciones">
+                🔗 Asignaciones
+            </a>
+
+            <a href="/seguimiento">
+                📍 Seguimiento
+            </a>
+
+            <a href="/incidencias">
+                ⚠️ Incidencias
+            </a>
+
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="/">Cerrar sesión</a>
+        </div>
+
+    </aside>
+
+
+    <main class="dashboard-contenido">
+
+        <header class="dashboard-header">
+
+            <div>
+                <h1>Panel de Control</h1>
+
+                <p>
+                    Sistema Integral de Gestión Logística
+                </p>
+            </div>
+
+            <div class="usuario-dashboard">
+                <span>Administrador</span>
+                <div class="avatar">A</div>
+            </div>
+
+        </header>
+
+
+        <section class="bienvenida">
+
+            <div>
+                <p class="bienvenida-mini">
+                    BIENVENIDO A
+                </p>
+
+                <h2>
+                    3T Carrier
+                </h2>
+
+                <p>
+                    Administra pedidos, unidades, operadores y seguimiento
+                    desde un solo lugar.
+                </p>
+            </div>
+
+            <div class="bienvenida-icono">
+                🚛
+            </div>
+
+        </section>
+
+
+        <section class="estadisticas">
+
+            <div class="stat-card">
+                <p>Pedidos activos</p>
+                <h3>0</h3>
+                <span>En tránsito</span>
+            </div>
+
+            <div class="stat-card">
+                <p>Unidades disponibles</p>
+                <h3>0</h3>
+                <span>Listas para asignar</span>
+            </div>
+
+            <div class="stat-card">
+                <p>Operadores disponibles</p>
+                <h3>0</h3>
+                <span>Activos</span>
+            </div>
+
+            <div class="stat-card">
+                <p>Incidencias abiertas</p>
+                <h3>0</h3>
+                <span>Requieren atención</span>
+            </div>
+
+        </section>
+
+
+        <section class="modulos">
+
+            <h2>Módulos del sistema</h2>
+
+            <div class="modulos-grid">
+
+                <a href="/clientes" class="modulo-card">
+                    <div class="modulo-icono">👥</div>
+                    <h3>Clientes</h3>
+                    <p>
+                        Consulta y registra clientes.
+                    </p>
+                </a>
+
+                <a href="/pedidos" class="modulo-card">
+                    <div class="modulo-icono">📦</div>
+                    <h3>Pedidos</h3>
+                    <p>
+                        Gestiona pedidos y su estatus.
+                    </p>
+                </a>
+
+                <a href="/operadores" class="modulo-card">
+                    <div class="modulo-icono">👷</div>
+                    <h3>Operadores</h3>
+                    <p>
+                        Consulta disponibilidad de operadores.
+                    </p>
+                </a>
+
+                <a href="/unidades" class="modulo-card">
+                    <div class="modulo-icono">🚚</div>
+                    <h3>Unidades</h3>
+                    <p>
+                        Administra la flota de transporte.
+                    </p>
+                </a>
+
+                <a href="/asignaciones" class="modulo-card">
+                    <div class="modulo-icono">🔗</div>
+                    <h3>Asignaciones</h3>
+                    <p>
+                        Asigna unidades y operadores.
+                    </p>
+                </a>
+
+                <a href="/seguimiento" class="modulo-card">
+                    <div class="modulo-icono">📍</div>
+                    <h3>Seguimiento</h3>
+                    <p>
+                        Consulta ubicación, estatus y ETA.
+                    </p>
+                </a>
+
+                <a href="/incidencias" class="modulo-card">
+                    <div class="modulo-icono">⚠️</div>
+                    <h3>Incidencias</h3>
+                    <p>
+                        Registra y consulta problemas en ruta.
+                    </p>
+                </a>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</body>
+</html>
