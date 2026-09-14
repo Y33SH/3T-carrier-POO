@@ -1,4 +1,4 @@
-# 3T Carrier - Sistema de Gestión Logística
+# 3T Carrier - Sistema de Gestión Logística (analizar bien codigo etc por favor.)
 
 Sistema web desarrollado con Python, Flask, HTML y CSS para la administración
 de operaciones de 3T Carrier.
@@ -116,7 +116,7 @@ Pedido -> Incidencia
 
 ## 3. Reemplazar datos temporales
 
-Actualmente existen secciones como:
+Actualmente existen secciones como y mas por favor analizar el proyecto bien:
 
 ```python
 lista_clientes = []
