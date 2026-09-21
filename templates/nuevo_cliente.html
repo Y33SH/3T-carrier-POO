@@ -22,14 +22,14 @@
         </div>
 
         <nav class="sidebar-menu">
-            <a href="/dashboard">🏠 Dashboard</a>
-            <a href="/clientes" class="activo">👥 Clientes</a>
-            <a href="/pedidos">📦 Pedidos</a>
-            <a href="/operadores">👷 Operadores</a>
-            <a href="/unidades">🚚 Unidades</a>
-            <a href="/asignaciones">🔗 Asignaciones</a>
-            <a href="/seguimiento">📍 Seguimiento</a>
-            <a href="/incidencias">⚠️ Incidencias</a>
+            <a href="/dashboard"> Menu</a>
+            <a href="/clientes" class="activo"> Clientes</a>
+            <a href="/pedidos"> Pedidos</a>
+            <a href="/operadores"> Operadores</a>
+            <a href="/unidades"> Unidades</a>
+            <a href="/asignaciones"> Asignaciones</a>
+            <a href="/seguimiento"> Seguimiento</a>
+            <a href="/incidencias"> Incidencias</a>
         </nav>
 
         <div class="sidebar-footer">
@@ -55,7 +55,7 @@
 
         <section class="formulario-contenedor">
 
-            <form class="formulario-cliente">
+            <form class="formulario-cliente" method="POST" action="/nuevo-cliente">
 
                 <div class="form-grid">
 
@@ -76,7 +76,7 @@
                             type="text"
                             id="nombre_contacto"
                             name="nombre_contacto"
-                            placeholder="Ej. Juan Pérez"
+                            placeholder=""
                             required
                         >
                     </div>
@@ -87,7 +87,7 @@
                             type="text"
                             id="telefono"
                             name="telefono"
-                            placeholder="Ej. 81 1234 5678"
+                            placeholder=""
                         >
                     </div>
 
@@ -117,7 +117,7 @@
                             type="text"
                             id="pais"
                             name="pais"
-                            placeholder="México"
+                            placeholder=""
                         >
                     </div>
 
@@ -127,7 +127,7 @@
                             type="text"
                             id="estado"
                             name="estado"
-                            placeholder="Nuevo León"
+                            placeholder=""
                         >
                     </div>
 

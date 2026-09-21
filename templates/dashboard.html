@@ -24,35 +24,35 @@
         <nav class="sidebar-menu">
 
             <a href="/dashboard" class="activo">
-                🏠 Dashboard
+                 Menu
             </a>
 
             <a href="/clientes">
-                👥 Clientes
+                 Clientes
             </a>
 
             <a href="/pedidos">
-                📦 Pedidos
+                 Pedidos
             </a>
 
             <a href="/operadores">
-                👷 Operadores
+                 Operadores
             </a>
 
             <a href="/unidades">
-                🚚 Unidades
+                 Unidades
             </a>
 
             <a href="/asignaciones">
-                🔗 Asignaciones
+                 Asignaciones
             </a>
 
             <a href="/seguimiento">
-                📍 Seguimiento
+                 Seguimiento
             </a>
 
             <a href="/incidencias">
-                ⚠️ Incidencias
+                 Incidencias
             </a>
 
         </nav>
@@ -107,34 +107,33 @@
 
         </section>
 
+<section class="estadisticas">
 
-        <section class="estadisticas">
+    <div class="stat-card">
+        <p>Pedidos activos</p>
+        <h3>{{ pedidos_activos }}</h3>
+        <span>En tránsito</span>
+    </div>
 
-            <div class="stat-card">
-                <p>Pedidos activos</p>
-                <h3>0</h3>
-                <span>En tránsito</span>
-            </div>
+    <div class="stat-card">
+        <p>Unidades disponibles</p>
+        <h3>{{ unidades_disponibles }}</h3>
+        <span>Listas para asignar</span>
+    </div>
 
-            <div class="stat-card">
-                <p>Unidades disponibles</p>
-                <h3>0</h3>
-                <span>Listas para asignar</span>
-            </div>
+    <div class="stat-card">
+        <p>Operadores disponibles</p>
+        <h3>{{ operadores_disponibles }}</h3>
+        <span>Activos</span>
+    </div>
 
-            <div class="stat-card">
-                <p>Operadores disponibles</p>
-                <h3>0</h3>
-                <span>Activos</span>
-            </div>
+    <div class="stat-card">
+        <p>Incidencias abiertas</p>
+        <h3>{{ incidencias_abiertas }}</h3>
+        <span>Requieren atención</span>
+    </div>
 
-            <div class="stat-card">
-                <p>Incidencias abiertas</p>
-                <h3>0</h3>
-                <span>Requieren atención</span>
-            </div>
-
-        </section>
+</section>
 
 
         <section class="modulos">

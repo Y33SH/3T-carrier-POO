@@ -1,7 +1,8 @@
 import os
+from urllib.parse import quote_plus
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 
 class Config:
@@ -14,7 +15,7 @@ class Config:
     DB_NAME = os.getenv("DB_NAME")
 
     SQLALCHEMY_DATABASE_URI = (
-        f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}"
+        f"mysql+pymysql://{DB_USER}:{quote_plus(DB_PASSWORD)}"
         f"@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     )
 
