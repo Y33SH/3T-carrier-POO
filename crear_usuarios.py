@@ -15,7 +15,7 @@ with app.app_context():
 
     # 2. Crear usuario con rol de Usuario (Consultor)
     usuario_normal = Usuario(
-        nombre="Consultora",
+        nombre="",
         usuario="comun3!",
         contrasena=generate_password_hash("2143@!"), # Aplica la misma regla de arriba
         rol="Usuario"
