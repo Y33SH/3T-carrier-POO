@@ -129,24 +129,82 @@ def clientes():
     return render_template("clientes.html", clientes=lista_clientes)
 
 @app.route("/nuevo-cliente", methods=["GET", "POST"])
-@roles_requeridos('Administrador') # Solo el Administrador puede crear clientes
+@roles_requeridos('Administrador')
 def nuevo_cliente():
     if request.method == "POST":
-        cliente = Cliente(
-            razon_social=request.form["razon_social"],
-            nombre_contacto=request.form["nombre_contacto"],
-            telefono=request.form.get("telefono"),
-            correo=request.form.get("correo"),
-            direccion=request.form.get("direccion"),
-            pais=request.form.get("pais"),
-            estado=request.form.get("estado")
-        )
-        db.session.add(cliente)
-        db.session.commit()
-        return redirect(url_for("clientes"))
+        # 1. Extraemos TODAS las variables (¡Aquí es donde falló tu código anterior!)
+        razon_social = request.form.get("razon_social")
+        nombre_contacto = request.form.get("nombre_contacto")
+        telefono = request.form.get("telefono")
+        correo = request.form.get("correo")
+        direccion = request.form.get("direccion")
+        pais = request.form.get("pais")
+        estado = request.form.get("estado")
+
+        # 2. VALIDACIONES
+        if not razon_social or not razon_social.strip():
+            flash("Parece que olvidaste la Razón Social. Este dato es obligatorio para registrar al cliente.", "error")
+            return redirect(url_for("nuevo_cliente"))
+            
+        if not nombre_contacto or not nombre_contacto.strip():
+            flash("Necesitamos el Nombre de Contacto para saber con quién comunicarnos.", "error")
+            return redirect(url_for("nuevo_cliente"))
+
+        if telefono and not telefono.isdigit():
+            flash("El número de teléfono tiene letras o espacios. Por favor, escribe solo números (ej. 8123456789).", "error")
+            return redirect(url_for("nuevo_cliente"))
+            
+        if telefono and len(telefono) < 10:
+             flash("El teléfono parece estar muy corto. Revisa que tenga al menos 10 números.", "error")
+             return redirect(url_for("nuevo_cliente"))
+
+        if correo and "@" not in correo:
+            flash("El correo electrónico está incompleto. Asegúrate de que incluya el símbolo '@'.", "error")
+            return redirect(url_for("nuevo_cliente"))
+
+        # 3. GUARDAR EN BD
+        try:
+            cliente = Cliente(
+                razon_social=razon_social,
+                nombre_contacto=nombre_contacto,
+                telefono=telefono,
+                correo=correo,
+                direccion=direccion,
+                pais=pais,
+                estado=estado
+            )
+            db.session.add(cliente)
+            db.session.commit()
+            
+            flash("¡Listo! El cliente se guardó correctamente en el sistema.", "success")
+            return redirect(url_for("clientes"))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash("Ups, hubo un problema al intentar guardar en la base de datos.", "error")
+            return redirect(url_for("nuevo_cliente"))
 
     return render_template("nuevo_cliente.html")
 
+    @app.route("/eliminar-cliente/<int:id>", methods=["POST"])
+    @roles_requeridos('Administrador') # Solo el Admin puede borrar
+    def eliminar_cliente(id):
+    # Buscamos el cliente por su ID en la base de datos
+        cliente_a_borrar = Cliente.query.get(id)
+    
+    if cliente_a_borrar:
+        try:
+            db.session.delete(cliente_a_borrar)
+            db.session.commit()
+            flash(f"El cliente '{cliente_a_borrar.razon_social}' fue eliminado correctamente.", "success")
+        except Exception as e:
+            db.session.rollback()
+            flash("No se pudo eliminar el cliente. Es posible que tenga pedidos o asignaciones vinculadas.", "error")
+    else:
+        flash("El cliente que intentas eliminar no existe.", "error")
+        
+    return redirect(url_for("clientes"))
+    
 @app.route("/pedidos")
 @login_requerido
 def pedidos():
