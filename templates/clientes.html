@@ -88,14 +88,14 @@
 
             </div>
 
-
+            {% if session.get('rol') == 'Administrador' %}
             <a
                 href="/nuevo-cliente"
                 class="boton-amarillo"
             >
                 + Nuevo cliente
             </a>
-
+            {% endif %}
         </header>
 
 

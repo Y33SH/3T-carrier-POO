@@ -47,11 +47,11 @@
                 <h1>Pedidos</h1>
                 <p>Gestión de pedidos y servicios de 3T Carrier</p>
             </div>
-
+            {% if session.get('rol') in ['Administrador', 'Editor'] %}
             <a href="/nuevo-pedido" class="boton-amarillo">
                 + Nuevo pedido
             </a>
-
+            {% endif %}
         </header>
 
 

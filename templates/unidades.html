@@ -47,10 +47,11 @@
                 <h1>Unidades</h1>
                 <p>Administración de la flota de 3T Carrier</p>
             </div>
-
+            {% if session.get('rol') == 'Administrador' %}
             <a href="/nueva-unidad" class="boton-amarillo">
-    + Nueva unidad
-</a>
+            + Nueva unidad
+            </a>
+           {% endif %} 
         </header>
 
 

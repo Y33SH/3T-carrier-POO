@@ -47,11 +47,11 @@
                 <h1>Asignaciones</h1>
                 <p>Asignación de pedidos, operadores y unidades</p>
             </div>
-
+            {% if session.get('rol') in ['Administrador', 'Editor'] %}
             <a href="/nueva-asignacion" class="boton-amarillo">
                 + Nueva asignación
             </a>
-
+            {% endif %}
         </header>
 
 

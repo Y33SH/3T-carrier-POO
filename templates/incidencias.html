@@ -46,11 +46,11 @@
                 <h1>Incidencias</h1>
                 <p>Registro y seguimiento de problemas en ruta</p>
             </div>
-
+            {% if session.get('rol') in ['Administrador', 'Editor'] %}
          <a href="/nueva-incidencia" class="boton-amarillo">
-    + Nueva incidencia
-</a>
-
+            + Nueva incidencia
+        </a>
+        {% endif %}
         </header>
 
         <section class="tabla-contenedor">
