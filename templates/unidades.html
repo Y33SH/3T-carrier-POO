@@ -54,6 +54,21 @@
            {% endif %} 
         </header>
 
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+            {% if mensajes %}
+                <div style="margin-bottom: 20px;" role="status" aria-live="polite">
+                    {% for categoria, mensaje in mensajes %}
+                        <div style="padding: 15px; border-radius: 8px; margin-bottom: 10px;
+                                    {% if categoria == 'error' %} background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;
+                                    {% elif categoria == 'warning' %} background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba;
+                                    {% elif categoria == 'info' %} background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb;
+                                    {% else %} background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; {% endif %}">
+                            {{ mensaje }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
 
         <section class="tabla-contenedor">
 
@@ -153,9 +168,91 @@
                             </td>
 
                             <td>
-                                <button class="btn-tabla">
+                                <button type="button" class="btn-tabla">
                                     Ver
                                 </button>
+                                {% if session.get('rol') == 'Administrador' %}
+                                <button
+                                    type="button"
+                                    class="btn-tabla btn-tabla-warning"
+                                    onclick="document.getElementById('editar-unidad-{{ unidad.id_unidad }}').showModal()"
+                                >
+                                    Editar
+                                </button>
+                                <form
+                                    method="POST"
+                                    action="{{ url_for('eliminar_unidad', id_unidad=unidad.id_unidad) }}"
+                                    style="display: inline;"
+                                >
+                                    <button
+                                        type="submit"
+                                        class="btn-tabla btn-tabla-danger"
+                                        onclick="return confirm('¿Estás seguro de que deseas dar de baja esta unidad?');"
+                                    >
+                                        Eliminar
+                                    </button>
+                                </form>
+
+                                <dialog id="editar-unidad-{{ unidad.id_unidad }}" class="modal-editar-cliente">
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for('editar_unidad', id_unidad=unidad.id_unidad) }}"
+                                        class="formulario-cliente"
+                                    >
+                                        <div class="modal-editar-cliente-header">
+                                            <h2>Editar unidad</h2>
+                                            <button
+                                                type="button"
+                                                class="btn-cerrar-modal"
+                                                aria-label="Cerrar"
+                                                onclick="this.closest('dialog').close()"
+                                            >
+                                                &times;
+                                            </button>
+                                        </div>
+
+                                        <div class="form-grid">
+                                            <div class="campo-form">
+                                                <label for="numero_economico_{{ unidad.id_unidad }}">Número económico</label>
+                                                <input id="numero_economico_{{ unidad.id_unidad }}" name="numero_economico" value="{{ unidad.numero_economico }}" required>
+                                            </div>
+                                            <div class="campo-form">
+                                                <label for="placas_{{ unidad.id_unidad }}">Placas</label>
+                                                <input id="placas_{{ unidad.id_unidad }}" name="placas" value="{{ unidad.placas }}" required>
+                                            </div>
+                                            <div class="campo-form">
+                                                <label for="marca_{{ unidad.id_unidad }}">Marca</label>
+                                                <input id="marca_{{ unidad.id_unidad }}" name="marca" value="{{ unidad.marca or '' }}">
+                                            </div>
+                                            <div class="campo-form">
+                                                <label for="modelo_{{ unidad.id_unidad }}">Modelo</label>
+                                                <input id="modelo_{{ unidad.id_unidad }}" name="modelo" value="{{ unidad.modelo or '' }}">
+                                            </div>
+                                            <div class="campo-form">
+                                                <label for="capacidad_{{ unidad.id_unidad }}">Capacidad</label>
+                                                <input id="capacidad_{{ unidad.id_unidad }}" name="capacidad" type="number" min="0" step="0.01" value="{{ unidad.capacidad or '' }}">
+                                            </div>
+                                            <div class="campo-form">
+                                                <label for="ubicacion_actual_{{ unidad.id_unidad }}">Ubicación actual</label>
+                                                <input id="ubicacion_actual_{{ unidad.id_unidad }}" name="ubicacion_actual" value="{{ unidad.ubicacion_actual or '' }}">
+                                            </div>
+                                            <div class="campo-form campo-completo">
+                                                <label for="estado_{{ unidad.id_unidad }}">Estado</label>
+                                                <select id="estado_{{ unidad.id_unidad }}" name="estado" required>
+                                                    {% for estado_opcion in ['DISPONIBLE', 'EN RUTA', 'MANTENIMIENTO', 'FUERA DE SERVICIO'] %}
+                                                        <option value="{{ estado_opcion }}" {% if unidad.estado == estado_opcion %}selected{% endif %}>{{ estado_opcion }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-acciones">
+                                            <button type="button" class="boton-cancelar" onclick="this.closest('dialog').close()">Cancelar</button>
+                                            <button type="submit" class="boton-guardar">Guardar cambios</button>
+                                        </div>
+                                    </form>
+                                </dialog>
+                                {% endif %}
                             </td>
 
                         </tr>
@@ -186,5 +283,6 @@
 
     </main>
 
+    <script src="{{ url_for('static', filename='js/table-details.js') }}" defer></script>
 </body>
 </html>

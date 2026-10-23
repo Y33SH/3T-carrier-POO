@@ -44,20 +44,36 @@
         <header class="dashboard-header">
 
             <div>
-                <h1>Nueva asignación</h1>
+                <h1>{{ 'Editar asignación' if asignacion else 'Nueva asignación' }}</h1>
                 <p>Asignar un pedido a un operador y una unidad</p>
             </div>
 
-            <a href="/asignaciones" class="boton-secundario">
+            <a href="{{ url_for('asignaciones') }}" class="boton-secundario">
                 ← Volver
             </a>
 
         </header>
 
 
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+            {% if mensajes %}
+                <div style="margin-bottom: 20px;" role="status" aria-live="polite">
+                    {% for categoria, mensaje in mensajes %}
+                        <div style="padding: 15px; border-radius: 8px; margin-bottom: 10px;
+                                    {% if categoria == 'error' %} background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;
+                                    {% elif categoria == 'warning' %} background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba;
+                                    {% elif categoria == 'info' %} background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb;
+                                    {% else %} background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; {% endif %}">
+                            {{ mensaje }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
         <section class="formulario-contenedor">
 
-            <form method="POST" action="/nueva-asignacion">
+            <form method="POST" action="{{ url_for('editar_asignacion', id=asignacion.id_asignacion) if asignacion else url_for('nueva_asignacion') }}">
 
                 <div class="form-grid">
 
@@ -67,15 +83,14 @@
                             Pedido
                         </label>
 
-                        <select id="id_pedido" name="id_pedido" required>
+                        <select id="id_pedido" name="id_pedido">
 
                             <option value="">
                                 Seleccionar pedido
                             </option>
 
                             {% for pedido in pedidos %}
-
-                            <option value="{{ pedido.id_pedido }}">
+                            <option value="{{ pedido.id_pedido }}" {% if asignacion and asignacion.id_pedido == pedido.id_pedido %}selected{% endif %}>
                                 {{ pedido.folio }}
                             </option>
 
@@ -92,15 +107,14 @@
                             Operador
                         </label>
 
-                        <select id="id_operador" name="id_operador" required>
+                        <select id="id_operador" name="id_operador">
 
                             <option value="">
                                 Seleccionar operador
                             </option>
 
                             {% for operador in operadores %}
-
-                            <option value="{{ operador.id_operador }}">
+                            <option value="{{ operador.id_operador }}" {% if asignacion and asignacion.id_operador == operador.id_operador %}selected{% endif %}>
                                 {{ operador.nombre }}
                             </option>
 
@@ -117,18 +131,20 @@
                             Unidad
                         </label>
 
-                        <select id="id_unidad" name="id_unidad" required>
+                        <select id="id_unidad" name="id_unidad">
 
                             <option value="">
                                 Seleccionar unidad
                             </option>
 
                             {% for unidad in unidades %}
-
-                            <option value="{{ unidad.id_unidad }}">
-                                {{ unidad.numero_economico }}
+                            <option value="{{ unidad.id_unidad }}" {% if asignacion and asignacion.id_unidad == unidad.id_unidad %}selected{% endif %}>
+                                {{ unidad.numero_economico }} - {{ unidad.placas }}
                             </option>
-
+                            {% else %}
+                            <option value="" disabled>
+                                No hay unidades disponibles en este momento
+                            </option>
                             {% endfor %}
 
                         </select>
@@ -146,7 +162,7 @@
                             type="datetime-local"
                             id="fecha_asignacion"
                             name="fecha_asignacion"
-                            required
+                            value="{{ asignacion.fecha_asignacion.strftime('%Y-%m-%dT%H:%M') if asignacion and asignacion.fecha_asignacion else '' }}"
                         >
 
                     </div>
@@ -162,6 +178,7 @@
                             type="datetime-local"
                             id="fecha_inicio"
                             name="fecha_inicio"
+                            value="{{ asignacion.fecha_inicio.strftime('%Y-%m-%dT%H:%M') if asignacion and asignacion.fecha_inicio else '' }}"
                         >
 
                     </div>
@@ -177,6 +194,7 @@
                             type="datetime-local"
                             id="fecha_fin"
                             name="fecha_fin"
+                            value="{{ asignacion.fecha_fin.strftime('%Y-%m-%dT%H:%M') if asignacion and asignacion.fecha_fin else '' }}"
                         >
 
                     </div>
@@ -190,19 +208,19 @@
 
                         <select id="estado" name="estado" required>
 
-                            <option value="ASIGNADA">
+                            <option value="ASIGNADA" {% if not asignacion or asignacion.estado == 'ASIGNADA' %}selected{% endif %}>
                                 Asignada
                             </option>
 
-                            <option value="EN CURSO">
+                            <option value="EN CURSO" {% if asignacion and asignacion.estado == 'EN CURSO' %}selected{% endif %}>
                                 En curso
                             </option>
 
-                            <option value="FINALIZADA">
+                            <option value="FINALIZADA" {% if asignacion and asignacion.estado == 'FINALIZADA' %}selected{% endif %}>
                                 Finalizada
                             </option>
 
-                            <option value="CANCELADA">
+                            <option value="CANCELADA" {% if asignacion and asignacion.estado == 'CANCELADA' %}selected{% endif %}>
                                 Cancelada
                             </option>
 
@@ -215,12 +233,12 @@
 
                 <div class="form-acciones">
 
-                    <a href="/asignaciones" class="boton-cancelar">
+                    <a href="{{ url_for('asignaciones') }}" class="boton-cancelar">
                         Cancelar
                     </a>
 
                     <button type="submit" class="boton-guardar">
-                        Guardar asignación
+                        {{ 'Guardar cambios' if asignacion else 'Guardar asignación' }}
                     </button>
 
                 </div>

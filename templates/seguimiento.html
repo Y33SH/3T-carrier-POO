@@ -8,6 +8,12 @@
 
     <link rel="stylesheet"
           href="{{ url_for('static', filename='css/estilos.css') }}">
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin=""
+    >
 </head>
 
 <body class="dashboard-body">
@@ -106,25 +112,7 @@
                 </div>
 
 
-                <div class="mapa-placeholder">
-
-                    <div class="mapa-icono">
-                        🗺️
-                    </div>
-
-                    <h3>Mapa GPS</h3>
-
-                    <p>
-                        Aquí se mostrará la ubicación en tiempo real
-                        de las unidades.
-                    </p>
-
-                    <small>
-                        Posteriormente puede integrarse Google Maps,
-                        Mapbox, Leaflet o datos GPS reales.
-                    </small>
-
-                </div>
+                <div id="mapa-gps" style="height: 400px; width: 100%; border-radius: 10px;"></div>
 
             </div>
 
@@ -140,108 +128,22 @@
                 </div>
 
 
-                <div class="lista-flota">
-
-                    {% for seguimiento in seguimientos %}
-
-                    <div class="unidad-tracking">
-
-                        <div class="unidad-tracking-header">
-
-                            <div>
-                                <h3>
-                                    🚚 {{ seguimiento.unidad }}
-                                </h3>
-
-                                <p>
-                                    Pedido:
-                                    {{ seguimiento.folio }}
-                                </p>
-                            </div>
-
-                            <span class="estado-activo">
-                                {{ seguimiento.estatus }}
-                            </span>
-
+                {% if asignaciones_activas %}
+                <div class="lista-flota-activa" style="overflow-y: auto; max-height: 400px;">
+                    {% for asignacion in asignaciones_activas %}
+                    <div class="flota-activa-item">
+                        <svg class="flota-activa-icono" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M3 6h11v11H3zM14 10h4l3 3v4h-7zM7 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm11 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>
+                        </svg>
+                        <div class="flota-activa-detalle">
+                            <strong>{{ asignacion.unidad.numero_economico }}</strong>
+                            <span>{{ asignacion.operador.nombre }}</span>
+                            <small>Destino: {{ asignacion.pedido.destino }}</small>
                         </div>
-
-
-                        <div class="tracking-datos">
-
-                            <div>
-                                <span>Ubicación</span>
-                                <strong>
-                                    {{ seguimiento.ubicacion }}
-                                </strong>
-                            </div>
-
-                            <div>
-                                <span>Velocidad</span>
-                                <strong>
-                                    {{ seguimiento.velocidad }} km/h
-                                </strong>
-                            </div>
-
-                            <div>
-                                <span>ETA</span>
-                                <strong>
-                                    {{ seguimiento.eta }}
-                                </strong>
-                            </div>
-
-                            <div>
-                                <span>Operador</span>
-                                <strong>
-                                    {{ seguimiento.operador }}
-                                </strong>
-                            </div>
-
-                        </div>
-
-
-                        <div class="ruta-info">
-
-                            <div class="ruta-punto">
-                                <span class="punto-origen"></span>
-
-                                <div>
-                                    <small>Origen</small>
-                                    <p>{{ seguimiento.origen }}</p>
-                                </div>
-                            </div>
-
-                            <div class="ruta-linea"></div>
-
-                            <div class="ruta-punto">
-                                <span class="punto-destino"></span>
-
-                                <div>
-                                    <small>Destino</small>
-                                    <p>{{ seguimiento.destino }}</p>
-                                </div>
-                            </div>
-
-                        </div>
-
-
-                        <div class="tracking-footer">
-
-                            <span>
-                                Última actualización:
-                                {{ seguimiento.fecha_hora }}
-                            </span>
-
-                            <button class="btn-tabla">
-                                Ver detalle
-                            </button>
-
-                        </div>
-
                     </div>
-
-
-                    {% else %}
-
+                    {% endfor %}
+                </div>
+                {% else %}
                     <div class="sin-datos-tracking">
 
                         <div>📡</div>
@@ -255,9 +157,7 @@
 
                     </div>
 
-                    {% endfor %}
-
-                </div>
+                {% endif %}
 
             </div>
 
@@ -265,5 +165,66 @@
 
     </main>
 
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""
+    ></script>
+    <script>
+        const mapaGps = L.map("mapa-gps").setView([25.6866, -100.3161], 6);
+        const unidadesMapa = {{ mapa_unidades|default([], true)|tojson }};
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(mapaGps);
+
+        function colorPorEstado(estado) {
+            switch ((estado || "").toLowerCase()) {
+                case "retraso":
+                    return "#f59e0b";
+                case "detenida":
+                    return "#dc2626";
+                case "en ruta":
+                default:
+                    return "#2e9d50";
+            }
+        }
+
+        function crearContenidoPopup(unidad) {
+            const contenido = document.createElement("div");
+            [
+                ["Unidad: ", unidad.numero_economico],
+                ["Operador: ", unidad.operador],
+                ["Destino: ", unidad.destino],
+                ["Estado: ", unidad.estado]
+            ].forEach(([etiqueta, valor]) => {
+                const linea = document.createElement("div");
+                const titulo = document.createElement("strong");
+                titulo.textContent = etiqueta;
+                linea.append(titulo, document.createTextNode(valor || "Sin información"));
+                contenido.append(linea);
+            });
+            return contenido;
+        }
+
+        unidadesMapa.forEach((unidad) => {
+            L.circleMarker([unidad.lat, unidad.lng], {
+                radius: 9,
+                color: "#ffffff",
+                weight: 2,
+                fillColor: colorPorEstado(unidad.estado),
+                fillOpacity: 0.95
+            })
+                .addTo(mapaGps)
+                .bindPopup(crearContenidoPopup(unidad));
+        });
+
+        if (unidadesMapa.length > 0) {
+            const ubicaciones = unidadesMapa.map((unidad) => [unidad.lat, unidad.lng]);
+            mapaGps.fitBounds(ubicaciones, { padding: [30, 30], maxZoom: 9 });
+        }
+    </script>
+    <script src="{{ url_for('static', filename='js/table-details.js') }}" defer></script>
 </body>
 </html>

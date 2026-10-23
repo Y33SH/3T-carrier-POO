@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>3T Carrier | Nuevo operador</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/estilos.css') }}">
+</head>
+
+<body class="dashboard-body">
+
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <img
+                src="{{ url_for('static', filename='css/IMG/logo-3t.png') }}"
+                alt="Logo 3T Carrier"
+            >
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="/dashboard">Menu</a>
+            <a href="/clientes">Clientes</a>
+            <a href="/pedidos">Pedidos</a>
+            <a href="/operadores" class="activo">Operadores</a>
+            <a href="/unidades">Unidades</a>
+            <a href="/asignaciones">Asignaciones</a>
+            <a href="/seguimiento">Seguimiento</a>
+            <a href="/incidencias">Incidencias</a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="/">Cerrar sesión</a>
+        </div>
+    </aside>
+
+    <main class="dashboard-contenido">
+        <header class="dashboard-header">
+            <div>
+                <h1>Nuevo operador</h1>
+                <p>Registrar un operador para la flota de 3T Carrier</p>
+            </div>
+
+            <a href="{{ url_for('operadores') }}" class="boton-secundario">
+                ← Volver
+            </a>
+        </header>
+
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+            {% if mensajes %}
+                <div style="margin-bottom: 20px;" role="status" aria-live="polite">
+                    {% for categoria, mensaje in mensajes %}
+                        <div style="padding: 15px; border-radius: 8px; margin-bottom: 10px;
+                                    {% if categoria == 'error' %} background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;
+                                    {% elif categoria == 'warning' %} background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba;
+                                    {% elif categoria == 'info' %} background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb;
+                                    {% else %} background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; {% endif %}">
+                            {{ mensaje }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <section class="formulario-contenedor">
+            <form method="POST" action="{{ url_for('nuevo_operador') }}">
+                <div class="form-grid">
+                    <div class="campo-form">
+                        <label for="nombre">Nombre</label>
+                        <input
+                            type="text"
+                            id="nombre"
+                            name="nombre"
+                            value="{{ datos_operador.get('nombre', '') if datos_operador else '' }}"
+                            maxlength="120"
+                            required
+                        >
+                    </div>
+
+                    <div class="campo-form">
+                        <label for="telefono">Teléfono</label>
+                        <input
+                            type="text"
+                            id="telefono"
+                            name="telefono"
+                            value="{{ datos_operador.get('telefono', '') if datos_operador else '' }}"
+                            maxlength="20"
+                        >
+                    </div>
+
+                    <div class="campo-form">
+                        <label for="numero_licencia">Número de licencia</label>
+                        <input
+                            type="text"
+                            id="numero_licencia"
+                            name="numero_licencia"
+                            value="{{ datos_operador.get('numero_licencia', '') if datos_operador else '' }}"
+                            maxlength="50"
+                            required
+                        >
+                    </div>
+
+                    <div class="campo-form">
+                        <label for="tipo_licencia">Tipo de licencia</label>
+                        <input
+                            type="text"
+                            id="tipo_licencia"
+                            name="tipo_licencia"
+                            value="{{ datos_operador.get('tipo_licencia', '') if datos_operador else '' }}"
+                            maxlength="50"
+                        >
+                    </div>
+
+                    <div class="campo-form">
+                        <label for="vigencia_licencia">Vigencia de licencia</label>
+                        <input
+                            type="date"
+                            id="vigencia_licencia"
+                            name="vigencia_licencia"
+                            value="{{ datos_operador.get('vigencia_licencia', '') if datos_operador else '' }}"
+                        >
+                    </div>
+
+                    <div class="campo-form">
+                        <label for="disponibilidad">Disponibilidad</label>
+                        <select id="disponibilidad" name="disponibilidad" required>
+                            <option value="true" {% if not datos_operador or datos_operador.get('disponibilidad', 'true') in ('true', '1', 'si', 'sí') %}selected{% endif %}>Sí</option>
+                            <option value="false" {% if datos_operador and datos_operador.get('disponibilidad') in ('false', '0', 'no') %}selected{% endif %}>No</option>
+                        </select>
+                    </div>
+
+                    <div class="campo-form">
+                        <label for="horas_servicio">Horas de servicio</label>
+                        <input
+                            type="number"
+                            id="horas_servicio"
+                            name="horas_servicio"
+                            min="0"
+                            max="999.99"
+                            step="0.01"
+                            value="{{ datos_operador.get('horas_servicio', '0') if datos_operador else '0' }}"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-acciones">
+                    <a href="{{ url_for('operadores') }}" class="boton-cancelar">
+                        Cancelar
+                    </a>
+                    <button type="submit" class="boton-guardar">
+                        Guardar Operador
+                    </button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+</body>
+</html>

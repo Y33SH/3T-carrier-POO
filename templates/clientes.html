@@ -98,6 +98,21 @@
             {% endif %}
         </header>
 
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+            {% if mensajes %}
+                <div style="margin-bottom: 20px;" role="status" aria-live="polite">
+                    {% for categoria, mensaje in mensajes %}
+                        <div style="padding: 15px; border-radius: 8px; margin-bottom: 10px;
+                                    {% if categoria == 'error' %} background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;
+                                    {% elif categoria == 'warning' %} background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba;
+                                    {% elif categoria == 'info' %} background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb;
+                                    {% else %} background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; {% endif %}">
+                            {{ mensaje }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
 
         <section class="tabla-contenedor">
 
@@ -180,9 +195,98 @@
                             </td>
 
                             <td>
-                                <button class="btn-tabla">
+                                <button type="button" class="btn-tabla">
                                     Ver
                                 </button>
+                                {% if session.get('rol') == 'Administrador' %}
+                                <button
+                                    type="button"
+                                    class="btn-tabla btn-tabla-warning"
+                                    onclick="document.getElementById('editar-cliente-{{ cliente.id_cliente }}').showModal()"
+                                >
+                                    Editar
+                                </button>
+                                <form
+                                    method="POST"
+                                    action="{{ url_for('eliminar_cliente', id_cliente=cliente.id_cliente) }}"
+                                    class="form-eliminar-cliente"
+                                >
+                                    <button
+                                        type="submit"
+                                        class="btn-tabla btn-tabla-danger"
+                                        onclick="return confirm('¿Estás seguro de que quieres eliminar a este cliente? Esta acción no se puede deshacer.');"
+                                    >
+                                        Eliminar
+                                    </button>
+                                </form>
+
+                                <dialog
+                                    id="editar-cliente-{{ cliente.id_cliente }}"
+                                    class="modal-editar-cliente"
+                                >
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for('editar_cliente', id_cliente=cliente.id_cliente) }}"
+                                        class="formulario-cliente"
+                                    >
+                                        <div class="modal-editar-cliente-header">
+                                            <h2>Editar cliente</h2>
+                                            <button
+                                                type="button"
+                                                class="btn-cerrar-modal"
+                                                aria-label="Cerrar"
+                                                onclick="this.closest('dialog').close()"
+                                            >
+                                                &times;
+                                            </button>
+                                        </div>
+
+                                        <div class="form-grid">
+                                            <div class="campo-form">
+                                                <label for="razon_social_{{ cliente.id_cliente }}">Razón social</label>
+                                                <input id="razon_social_{{ cliente.id_cliente }}" name="razon_social" value="{{ cliente.razon_social }}" required>
+                                            </div>
+                                            <div class="campo-form">
+                                                <label for="rfc_{{ cliente.id_cliente }}">RFC</label>
+                                                <input id="rfc_{{ cliente.id_cliente }}" name="rfc" value="{{ cliente.rfc or '' }}" maxlength="13">
+                                            </div>
+                                            <div class="campo-form">
+                                                <label for="nombre_contacto_{{ cliente.id_cliente }}">Nombre de contacto</label>
+                                                <input id="nombre_contacto_{{ cliente.id_cliente }}" name="nombre_contacto" value="{{ cliente.nombre_contacto }}" required>
+                                            </div>
+                                            <div class="campo-form">
+                                                <label for="telefono_{{ cliente.id_cliente }}">Teléfono</label>
+                                                <input id="telefono_{{ cliente.id_cliente }}" name="telefono" value="{{ cliente.telefono or '' }}">
+                                            </div>
+                                            <div class="campo-form">
+                                                <label for="correo_{{ cliente.id_cliente }}">Correo</label>
+                                                <input id="correo_{{ cliente.id_cliente }}" name="correo" type="email" value="{{ cliente.correo or '' }}">
+                                            </div>
+                                            <div class="campo-form">
+                                                <label for="direccion_{{ cliente.id_cliente }}">Dirección</label>
+                                                <input id="direccion_{{ cliente.id_cliente }}" name="direccion" value="{{ cliente.direccion or '' }}">
+                                            </div>
+                                            <div class="campo-form">
+                                                <label for="pais_{{ cliente.id_cliente }}">País</label>
+                                                <input id="pais_{{ cliente.id_cliente }}" name="pais" value="{{ cliente.pais or '' }}">
+                                            </div>
+                                            <div class="campo-form">
+                                                <label for="estado_{{ cliente.id_cliente }}">Estado</label>
+                                                <input id="estado_{{ cliente.id_cliente }}" name="estado" value="{{ cliente.estado or '' }}">
+                                            </div>
+                                        </div>
+
+                                        <div class="form-acciones">
+                                            <button type="button" class="boton-cancelar" onclick="this.closest('dialog').close()">
+                                                Cancelar
+                                            </button>
+                                            <button type="submit" class="boton-guardar">
+                                                Guardar cambios
+                                            </button>
+                                        </div>
+                                    </form>
+                                </dialog>
+                                {% endif %}
                             </td>
 
                         </tr>
@@ -215,5 +319,6 @@
 
     </main>
 
+    <script src="{{ url_for('static', filename='js/table-details.js') }}" defer></script>
 </body>
 </html>

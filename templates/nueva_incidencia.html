@@ -46,22 +46,35 @@
         <header class="dashboard-header">
 
             <div>
-                <h1>Nueva incidencia</h1>
-                <p>Registrar un problema relacionado con un pedido</p>
+                <h1>{{ 'Editar incidencia' if incidencia else 'Nueva incidencia' }}</h1>
+                <p>{{ 'Actualiza el reporte relacionado con un pedido' if incidencia else 'Registrar un problema relacionado con un pedido' }}</p>
             </div>
 
-            <a href="/incidencias" class="boton-secundario">
+            <a href="{{ url_for('incidencias') }}" class="boton-secundario">
                 ← Volver
             </a>
 
         </header>
 
 
-        <!-- FORMULARIO -->
-        <section class="formulario-contenedor">
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+            {% if mensajes %}
+                <div style="margin-bottom: 20px;" role="status" aria-live="polite">
+                    {% for categoria, mensaje in mensajes %}
+                        <div style="padding: 15px; border-radius: 8px; margin-bottom: 10px;
+                                    {% if categoria == 'error' %} background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;
+                                    {% elif categoria == 'warning' %} background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba;
+                                    {% elif categoria == 'info' %} background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb;
+                                    {% else %} background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; {% endif %}">
+                            {{ mensaje }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
 
-            <!-- Después se cambia a method="POST" -->
-         <form method="POST" action="/nueva-incidencia">
+        <section class="formulario-contenedor">
+         <form method="POST" action="{{ url_for('editar_incidencia', id=incidencia.id_incidencia) if incidencia else url_for('nueva_incidencia') }}">
 
                 <div class="form-grid">
 
@@ -76,7 +89,6 @@
                         <select
                             id="id_pedido"
                             name="id_pedido"
-                            required
                         >
 
                             <option value="">
@@ -85,7 +97,7 @@
 
                             {% for pedido in pedidos %}
 
-                            <option value="{{ pedido.id_pedido }}">
+                            <option value="{{ pedido.id_pedido }}" {% if (datos_incidencia and datos_incidencia.get('id_pedido') == pedido.id_pedido|string) or (not datos_incidencia and incidencia and incidencia.id_pedido == pedido.id_pedido) %}selected{% endif %}>
                                 {{ pedido.folio }}
                             </option>
 
@@ -106,34 +118,33 @@
                         <select
                             id="tipo"
                             name="tipo"
-                            required
                         >
 
                             <option value="">
                                 Seleccionar tipo
                             </option>
 
-                            <option value="MECANICA">
+                            <option value="MECANICA" {% if (datos_incidencia and datos_incidencia.get('tipo') == 'MECANICA') or (not datos_incidencia and incidencia and incidencia.tipo == 'MECANICA') %}selected{% endif %}>
                                 Falla mecánica
                             </option>
 
-                            <option value="ACCIDENTE">
+                            <option value="ACCIDENTE" {% if (datos_incidencia and datos_incidencia.get('tipo') == 'ACCIDENTE') or (not datos_incidencia and incidencia and incidencia.tipo == 'ACCIDENTE') %}selected{% endif %}>
                                 Accidente
                             </option>
 
-                            <option value="RETRASO">
+                            <option value="RETRASO" {% if (datos_incidencia and datos_incidencia.get('tipo') == 'RETRASO') or (not datos_incidencia and incidencia and incidencia.tipo == 'RETRASO') %}selected{% endif %}>
                                 Retraso
                             </option>
 
-                            <option value="RUTA">
+                            <option value="RUTA" {% if (datos_incidencia and datos_incidencia.get('tipo') == 'RUTA') or (not datos_incidencia and incidencia and incidencia.tipo == 'RUTA') %}selected{% endif %}>
                                 Problema de ruta
                             </option>
 
-                            <option value="MERCANCIA">
+                            <option value="MERCANCIA" {% if (datos_incidencia and datos_incidencia.get('tipo') == 'MERCANCIA') or (not datos_incidencia and incidencia and incidencia.tipo == 'MERCANCIA') %}selected{% endif %}>
                                 Problema con mercancía
                             </option>
 
-                            <option value="OTRA">
+                            <option value="OTRA" {% if (datos_incidencia and datos_incidencia.get('tipo') == 'OTRA') or (not datos_incidencia and incidencia and incidencia.tipo == 'OTRA') %}selected{% endif %}>
                                 Otra
                             </option>
 
@@ -153,7 +164,7 @@
                             type="datetime-local"
                             id="fecha_hora"
                             name="fecha_hora"
-                            required
+                            value="{{ datos_incidencia.get('fecha_hora', '') if datos_incidencia else (incidencia.fecha_hora.strftime('%Y-%m-%dT%H:%M') if incidencia and incidencia.fecha_hora else '') }}"
                         >
 
                     </div>
@@ -169,18 +180,17 @@
                         <select
                             id="estado"
                             name="estado"
-                            required
                         >
 
-                            <option value="ABIERTA">
+                            <option value="ABIERTA" {% if (datos_incidencia and datos_incidencia.get('estado', 'ABIERTA') == 'ABIERTA') or (not datos_incidencia and (not incidencia or incidencia.estado == 'ABIERTA')) %}selected{% endif %}>
                                 Abierta
                             </option>
 
-                            <option value="EN PROCESO">
+                            <option value="EN PROCESO" {% if (datos_incidencia and datos_incidencia.get('estado') == 'EN PROCESO') or (not datos_incidencia and incidencia and incidencia.estado == 'EN PROCESO') %}selected{% endif %}>
                                 En proceso
                             </option>
 
-                            <option value="RESUELTA">
+                            <option value="RESUELTA" {% if (datos_incidencia and datos_incidencia.get('estado') == 'RESUELTA') or (not datos_incidencia and incidencia and incidencia.estado == 'RESUELTA') %}selected{% endif %}>
                                 Resuelta
                             </option>
 
@@ -201,8 +211,7 @@
                             name="descripcion"
                             rows="5"
                             placeholder="Describe qué ocurrió durante el servicio..."
-                            required
-                        ></textarea>
+                        >{{ datos_incidencia.get('descripcion', '') if datos_incidencia else (incidencia.descripcion if incidencia else '') }}</textarea>
 
                     </div>
 
@@ -219,7 +228,7 @@
                             name="solucion"
                             rows="4"
                             placeholder="Describe la solución aplicada (opcional)"
-                        ></textarea>
+                        >{{ datos_incidencia.get('solucion', '') if datos_incidencia else (incidencia.solucion if incidencia and incidencia.solucion else '') }}</textarea>
 
                     </div>
 
@@ -230,7 +239,7 @@
                 <div class="form-acciones">
 
                     <a
-                        href="/incidencias"
+                        href="{{ url_for('incidencias') }}"
                         class="boton-cancelar"
                     >
                         Cancelar
@@ -240,7 +249,7 @@
                         type="submit"
                         class="boton-guardar"
                     >
-                        Registrar incidencia
+                        {{ 'Guardar cambios' if incidencia else 'Registrar incidencia' }}
                     </button>
 
                 </div>

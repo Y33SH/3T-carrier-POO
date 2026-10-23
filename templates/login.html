@@ -8,6 +8,31 @@
 
     <link rel="stylesheet"
           href="{{ url_for('static', filename='css/estilos.css') }}">
+    <style>
+        .login-alertas {
+            margin: 0 0 1rem;
+        }
+
+        .login-alerta {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.7rem;
+            padding: 0.9rem 1rem;
+            border: 1px solid #f4c7c7;
+            border-radius: 12px;
+            background: #fff1f1;
+            color: #7f2727;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            text-align: left;
+            box-shadow: 0 4px 14px rgba(127, 39, 39, 0.08);
+        }
+
+        .login-alerta-icono {
+            flex: 0 0 auto;
+            font-weight: 700;
+        }
+    </style>
 </head>
 
 <body class="login-body">
@@ -33,6 +58,19 @@
             <p class="subtitulo">
                 Sistema Integral de Gestión Logística
             </p>
+
+            {% with mensajes = get_flashed_messages(with_categories=true) %}
+                {% if mensajes %}
+                    <div class="login-alertas" role="status" aria-live="polite">
+                        {% for categoria, mensaje in mensajes %}
+                            <div class="login-alerta">
+                                <span class="login-alerta-icono" aria-hidden="true"></span>
+                                <span>{{ mensaje }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
 
             <form action="/" method="POST">
 
