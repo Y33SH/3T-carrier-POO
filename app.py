@@ -1,10 +1,17 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
 from flask_migrate import Migrate
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from functools import wraps
+from io import BytesIO
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from werkzeug.security import check_password_hash # Para validar contraseñas seguras
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import landscape, letter
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import inch
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from xml.sax.saxutils import escape
 
 from config import Config
 from models import (
@@ -129,6 +136,172 @@ def dashboard():
         operadores_disponibles=operadores_disponibles,
         incidencias_abiertas=incidencias_abiertas,
         rol=session.get('rol') # Pasamos el rol a la plantilla por si quieres ocultar botones
+    )
+
+@app.route("/reportes")
+@roles_requeridos('Administrador')
+def reportes():
+    return render_template("reportes.html")
+
+@app.route("/reportes/<string:tipo>")
+@roles_requeridos('Administrador')
+def descargar_reporte(tipo):
+    estilos = getSampleStyleSheet()
+    estilo_celda = ParagraphStyle(
+        "ReportCell",
+        parent=estilos["BodyText"],
+        fontSize=7,
+        leading=9,
+    )
+    estilo_encabezado = ParagraphStyle(
+        "ReportHeader",
+        parent=estilos["BodyText"],
+        fontName="Helvetica-Bold",
+        fontSize=7,
+        leading=9,
+        textColor=colors.white,
+    )
+
+    def fecha_texto(valor):
+        return valor.strftime("%d/%m/%Y %H:%M") if valor else "-"
+
+    if tipo == "pedidos":
+        titulo = "Reporte de pedidos"
+        encabezados = ("Folio", "Cliente", "Servicio", "Origen", "Destino", "Fecha estimada", "Estado", "Tarifa")
+        registros = (
+            db.session.query(
+                Pedido.folio,
+                Cliente.razon_social,
+                TipoServicio.nombre,
+                Pedido.origen,
+                Pedido.destino,
+                Pedido.fecha_estimada,
+                Pedido.estado,
+                Pedido.tarifa,
+            )
+            .join(Cliente, Pedido.id_cliente == Cliente.id_cliente)
+            .join(TipoServicio, Pedido.id_tipo_servicio == TipoServicio.id_tipo_servicio)
+            .order_by(Pedido.id_pedido)
+            .all()
+        )
+        filas = [
+            (folio, cliente, servicio, origen, destino, fecha_texto(fecha), estado, f"${tarifa}" if tarifa is not None else "-")
+            for folio, cliente, servicio, origen, destino, fecha, estado, tarifa in registros
+        ]
+    elif tipo == "asignaciones":
+        titulo = "Reporte de asignaciones"
+        encabezados = ("ID", "Folio pedido", "Operador", "Unidad", "Fecha asignación", "Inicio", "Fin", "Estado")
+        registros = (
+            db.session.query(
+                Asignacion.id_asignacion,
+                Pedido.folio,
+                Operador.nombre,
+                Unidad.numero_economico,
+                Asignacion.fecha_asignacion,
+                Asignacion.fecha_inicio,
+                Asignacion.fecha_fin,
+                Asignacion.estado,
+            )
+            .join(Pedido, Asignacion.id_pedido == Pedido.id_pedido)
+            .join(Operador, Asignacion.id_operador == Operador.id_operador)
+            .join(Unidad, Asignacion.id_unidad == Unidad.id_unidad)
+            .order_by(Asignacion.id_asignacion)
+            .all()
+        )
+        filas = [
+            (identificador, folio, operador, unidad, fecha_texto(fecha), fecha_texto(inicio), fecha_texto(fin), estado)
+            for identificador, folio, operador, unidad, fecha, inicio, fin, estado in registros
+        ]
+    elif tipo == "incidencias":
+        titulo = "Reporte de incidencias"
+        encabezados = ("ID", "Folio pedido", "Tipo", "Descripción", "Fecha", "Estado", "Solución")
+        registros = (
+            db.session.query(
+                Incidencia.id_incidencia,
+                Pedido.folio,
+                Incidencia.tipo,
+                Incidencia.descripcion,
+                Incidencia.fecha_hora,
+                Incidencia.estado,
+                Incidencia.solucion,
+            )
+            .join(Pedido, Incidencia.id_pedido == Pedido.id_pedido)
+            .order_by(Incidencia.id_incidencia)
+            .all()
+        )
+        filas = [
+            (identificador, folio, tipo_incidencia, descripcion, fecha_texto(fecha), estado, solucion or "-")
+            for identificador, folio, tipo_incidencia, descripcion, fecha, estado, solucion in registros
+        ]
+    elif tipo == "clientes":
+        titulo = "Reporte de clientes"
+        encabezados = ("Razón social", "RFC", "Contacto", "Teléfono", "Correo", "Estado", "País")
+        registros = Cliente.query.order_by(Cliente.razon_social).all()
+        filas = [
+            (
+                cliente.razon_social,
+                cliente.rfc or "-",
+                cliente.nombre_contacto,
+                cliente.telefono or "-",
+                cliente.correo or "-",
+                cliente.estado or "-",
+                cliente.pais or "-",
+            )
+            for cliente in registros
+        ]
+    else:
+        return "Reporte no encontrado.", 404
+
+    salida = BytesIO()
+    documento = SimpleDocTemplate(
+        salida,
+        pagesize=landscape(letter),
+        rightMargin=0.4 * inch,
+        leftMargin=0.4 * inch,
+        topMargin=0.45 * inch,
+        bottomMargin=0.45 * inch,
+        title=titulo,
+    )
+    contenido = [
+        Paragraph(escape(titulo), estilos["Title"]),
+        Paragraph(f"Generado el {datetime.now().strftime('%d/%m/%Y %H:%M')}", estilos["Normal"]),
+        Spacer(1, 0.2 * inch),
+    ]
+    datos_tabla = [
+        [Paragraph(escape(str(texto)), estilo_encabezado) for texto in encabezados]
+    ]
+    datos_tabla.extend(
+        [
+            [Paragraph(escape(str(valor if valor is not None else "-")), estilo_celda) for valor in fila]
+            for fila in filas
+        ]
+    )
+    ancho_columna = (landscape(letter)[0] - 0.8 * inch) / len(encabezados)
+    tabla = Table(
+        datos_tabla,
+        colWidths=[ancho_columna] * len(encabezados),
+        repeatRows=1,
+    )
+    tabla.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#102f50")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("GRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#d0d5dd")),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f2f4f7")]),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 5),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+        ("TOPPADDING", (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+    ]))
+    contenido.append(tabla)
+    documento.build(contenido)
+    salida.seek(0)
+
+    return send_file(
+        salida,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=f"reporte-{tipo}-{date.today().isoformat()}.pdf",
     )
 
 @app.route("/clientes")
@@ -340,6 +513,120 @@ def eliminar_pedido(id_pedido):
         flash("No pudimos eliminar el pedido porque todavía está relacionado con otros registros.", "error")
 
     return redirect(url_for("pedidos"))
+
+@app.route("/editar_pedido/<int:id_pedido>", methods=["GET", "POST"])
+@roles_requeridos('Administrador', 'Editor')
+def editar_pedido(id_pedido):
+    pedido = Pedido.query.get_or_404(id_pedido)
+    clientes = Cliente.query.all()
+    servicios = TipoServicio.query.all()
+
+    if request.method == "POST":
+        try:
+            id_cliente = int(request.form.get("id_cliente", ""))
+            id_tipo_servicio = int(request.form.get("id_tipo_servicio", ""))
+        except (TypeError, ValueError):
+            flash("Selecciona un cliente y un servicio para poder actualizar el pedido.", "error")
+            return render_template(
+                "nuevo_pedido.html",
+                pedido=pedido,
+                clientes=clientes,
+                servicios=servicios,
+                datos_pedido=request.form,
+            )
+
+        folio = (request.form.get("folio") or "").strip()
+        origen = (request.form.get("origen") or "").strip()
+        destino = (request.form.get("destino") or "").strip()
+        if not folio or not origen or not destino:
+            flash("Completa el folio, el origen y el destino para actualizar el pedido.", "error")
+            return render_template(
+                "nuevo_pedido.html",
+                pedido=pedido,
+                clientes=clientes,
+                servicios=servicios,
+                datos_pedido=request.form,
+            )
+
+        folio_existente = Pedido.query.filter(
+            Pedido.folio == folio,
+            Pedido.id_pedido != id_pedido,
+        ).first()
+        if folio_existente:
+            flash("El folio ingresado ya pertenece a otro pedido. Verifica el número de orden.", "warning")
+            return render_template(
+                "nuevo_pedido.html",
+                pedido=pedido,
+                clientes=clientes,
+                servicios=servicios,
+                datos_pedido=request.form,
+            )
+
+        if not Cliente.query.filter_by(id_cliente=id_cliente).first():
+            flash("El cliente seleccionado ya no está disponible. Elige otro de la lista.", "warning")
+            return render_template(
+                "nuevo_pedido.html",
+                pedido=pedido,
+                clientes=clientes,
+                servicios=servicios,
+                datos_pedido=request.form,
+            )
+        if not TipoServicio.query.filter_by(id_tipo_servicio=id_tipo_servicio).first():
+            flash("El servicio seleccionado ya no está disponible. Elige otro de la lista.", "warning")
+            return render_template(
+                "nuevo_pedido.html",
+                pedido=pedido,
+                clientes=clientes,
+                servicios=servicios,
+                datos_pedido=request.form,
+            )
+
+        try:
+            tarifa_form = request.form.get("tarifa", "").strip()
+            tarifa = Decimal(tarifa_form) if tarifa_form else None
+            fecha_form = request.form.get("fecha_estimada", "").strip()
+            fecha_estimada = datetime.fromisoformat(fecha_form) if fecha_form else None
+        except (InvalidOperation, ValueError):
+            flash("Revisa la tarifa y la fecha estimada; alguno de esos datos no tiene un formato válido.", "error")
+            return render_template(
+                "nuevo_pedido.html",
+                pedido=pedido,
+                clientes=clientes,
+                servicios=servicios,
+                datos_pedido=request.form,
+            )
+
+        pedido.id_cliente = id_cliente
+        pedido.id_tipo_servicio = id_tipo_servicio
+        pedido.folio = folio
+        pedido.origen = origen
+        pedido.destino = destino
+        pedido.mercancia = request.form.get("mercancia") or None
+        pedido.tarifa = tarifa
+        pedido.fecha_estimada = fecha_estimada
+        pedido.estado = request.form.get("estado") or "REGISTRADO"
+
+        try:
+            db.session.commit()
+            flash("Los datos del pedido se actualizaron correctamente.", "success")
+            return redirect(url_for("pedidos"))
+        except SQLAlchemyError:
+            db.session.rollback()
+            flash("No pudimos guardar los cambios del pedido. Revisa los datos e inténtalo de nuevo.", "error")
+            return render_template(
+                "nuevo_pedido.html",
+                pedido=pedido,
+                clientes=clientes,
+                servicios=servicios,
+                datos_pedido=request.form,
+            )
+
+    return render_template(
+        "nuevo_pedido.html",
+        pedido=pedido,
+        clientes=clientes,
+        servicios=servicios,
+    )
 
 @app.route("/operadores")
 @login_requerido

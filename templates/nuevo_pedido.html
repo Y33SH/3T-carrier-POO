@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>3T Carrier | Nuevo pedido</title>
+    <title>3T Carrier | {{ 'Editar pedido' if pedido else 'Nuevo pedido' }}</title>
 
     <link rel="stylesheet"
           href="{{ url_for('static', filename='css/estilos.css') }}">
@@ -46,8 +46,8 @@
         <header class="dashboard-header">
 
             <div>
-                <h1>Nuevo pedido</h1>
-                <p>Registrar un nuevo servicio de transporte</p>
+                <h1>{{ 'Editar pedido' if pedido else 'Nuevo pedido' }}</h1>
+                <p>{{ 'Actualizar la información del servicio de transporte' if pedido else 'Registrar un nuevo servicio de transporte' }}</p>
             </div>
 
             <a href="/pedidos" class="boton-secundario">
@@ -74,7 +74,13 @@
 
         <section class="formulario-contenedor">
 
-            <form class="formulario-pedido" method="POST" action="{{ url_for('nuevo_pedido') }}">
+            {% set datos_form = datos_pedido or {} %}
+            {% set cliente_seleccionado = datos_form.get('id_cliente', pedido.id_cliente if pedido else '') %}
+            {% set servicio_seleccionado = datos_form.get('id_tipo_servicio', pedido.id_tipo_servicio if pedido else '') %}
+            {% set estado_seleccionado = datos_form.get('estado', pedido.estado if pedido else 'REGISTRADO') %}
+            {% set fecha_seleccionada = datos_form.get('fecha_estimada', pedido.fecha_estimada.strftime('%Y-%m-%dT%H:%M') if pedido and pedido.fecha_estimada else '') %}
+
+            <form class="formulario-pedido" method="POST" action="{{ url_for('editar_pedido', id_pedido=pedido.id_pedido) if pedido else url_for('nuevo_pedido') }}">
 
                 <div class="form-grid">
 
@@ -96,7 +102,7 @@
 
                             {% for cliente in clientes %}
 
-                            <option value="{{ cliente.id_cliente }}">
+                            <option value="{{ cliente.id_cliente }}" {% if cliente_seleccionado|string == cliente.id_cliente|string %}selected{% endif %}>
                                 {{ cliente.razon_social }}
                             </option>
 
@@ -125,7 +131,7 @@
 
                             {% for servicio in servicios %}
 
-                            <option value="{{ servicio.id_tipo_servicio }}">
+                            <option value="{{ servicio.id_tipo_servicio }}" {% if servicio_seleccionado|string == servicio.id_tipo_servicio|string %}selected{% endif %}>
                                 {{ servicio.nombre }}
                             </option>
 
@@ -148,6 +154,7 @@
                             id="folio"
                             name="folio"
                             placeholder="Ej. 3TC-0001"
+                            value="{{ datos_form.get('folio', pedido.folio if pedido else '') }}"
                             required
                         >
 
@@ -165,6 +172,7 @@
                             type="datetime-local"
                             id="fecha_estimada"
                             name="fecha_estimada"
+                            value="{{ fecha_seleccionada }}"
                             required
                         >
 
@@ -183,6 +191,7 @@
                             id="origen"
                             name="origen"
                             placeholder="Ej. Monterrey, Nuevo León"
+                            value="{{ datos_form.get('origen', pedido.origen if pedido else '') }}"
                             required
                         >
 
@@ -201,6 +210,7 @@
                             id="destino"
                             name="destino"
                             placeholder="Ej. Saltillo, Coahuila"
+                            value="{{ datos_form.get('destino', pedido.destino if pedido else '') }}"
                             required
                         >
 
@@ -219,7 +229,7 @@
                             name="mercancia"
                             placeholder="Descripción de la mercancía"
                             rows="4"
-                        ></textarea>
+                        >{{ datos_form.get('mercancia', pedido.mercancia if pedido and pedido.mercancia else '') }}</textarea>
 
                     </div>
 
@@ -238,6 +248,7 @@
                             placeholder="0.00"
                             min="0"
                             step="0.01"
+                            value="{{ datos_form.get('tarifa', pedido.tarifa if pedido and pedido.tarifa is not none else '') }}"
                         >
 
                     </div>
@@ -255,23 +266,23 @@
                             name="estado"
                             required
                         >
-                            <option value="REGISTRADO">
+                            <option value="REGISTRADO" {% if estado_seleccionado == 'REGISTRADO' %}selected{% endif %}>
                                 Registrado
                             </option>
 
-                            <option value="ASIGNADO">
+                            <option value="ASIGNADO" {% if estado_seleccionado == 'ASIGNADO' %}selected{% endif %}>
                                 Asignado
                             </option>
 
-                            <option value="EN TRANSITO">
+                            <option value="EN TRANSITO" {% if estado_seleccionado == 'EN TRANSITO' %}selected{% endif %}>
                                 En tránsito
                             </option>
 
-                            <option value="ENTREGADO">
+                            <option value="ENTREGADO" {% if estado_seleccionado == 'ENTREGADO' %}selected{% endif %}>
                                 Entregado
                             </option>
 
-                            <option value="CANCELADO">
+                            <option value="CANCELADO" {% if estado_seleccionado == 'CANCELADO' %}selected{% endif %}>
                                 Cancelado
                             </option>
                         </select>

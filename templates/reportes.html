@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3T Carrier | Reportes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+</head>
+<body class="dashboard-body">
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <img src="{{ url_for('static', filename='css/IMG/logo-3t.png') }}" alt="Logo 3T Carrier">
+        </div>
+        <nav class="sidebar-menu">
+            <a href="{{ url_for('dashboard') }}">Menu</a>
+            <a href="{{ url_for('clientes') }}">Clientes</a>
+            <a href="{{ url_for('pedidos') }}">Pedidos</a>
+            <a href="{{ url_for('operadores') }}">Operadores</a>
+            <a href="{{ url_for('unidades') }}">Unidades</a>
+            <a href="{{ url_for('asignaciones') }}">Asignaciones</a>
+            <a href="{{ url_for('seguimiento') }}">Seguimiento</a>
+            <a href="{{ url_for('incidencias') }}">Incidencias</a>
+            <a href="{{ url_for('reportes') }}" class="activo">Reportes</a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('logout') }}">Cerrar sesión</a>
+        </div>
+    </aside>
+
+    <main class="dashboard-contenido">
+        <header class="dashboard-header">
+            <div>
+                <h1>Reportes</h1>
+                <p>Descarga información actualizada de la operación en formato PDF.</p>
+            </div>
+        </header>
+
+        <section class="modulos">
+            <h2>Reportes disponibles</h2>
+            <div class="modulos-grid">
+                <article class="modulo-card">
+                    <div class="modulo-icono">📦</div>
+                    <h3>Pedidos</h3>
+                    <p>Folios, clientes, rutas, tarifas y estados de los pedidos.</p>
+                    <a class="boton-amarillo" href="{{ url_for('descargar_reporte', tipo='pedidos') }}">Descargar PDF</a>
+                </article>
+                <article class="modulo-card">
+                    <div class="modulo-icono">🔗</div>
+                    <h3>Asignaciones</h3>
+                    <p>Pedidos, operadores, unidades y fechas de asignación.</p>
+                    <a class="boton-amarillo" href="{{ url_for('descargar_reporte', tipo='asignaciones') }}">Descargar PDF</a>
+                </article>
+                <article class="modulo-card">
+                    <div class="modulo-icono">⚠️</div>
+                    <h3>Incidencias</h3>
+                    <p>Incidencias por pedido, fechas, estados y soluciones.</p>
+                    <a class="boton-amarillo" href="{{ url_for('descargar_reporte', tipo='incidencias') }}">Descargar PDF</a>
+                </article>
+                <article class="modulo-card">
+                    <div class="modulo-icono">👥</div>
+                    <h3>Clientes</h3>
+                    <p>Directorio de clientes y datos de contacto.</p>
+                    <a class="boton-amarillo" href="{{ url_for('descargar_reporte', tipo='clientes') }}">Descargar PDF</a>
+                </article>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

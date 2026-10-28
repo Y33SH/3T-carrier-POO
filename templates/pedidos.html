@@ -125,6 +125,7 @@
                                     Ver
                                 </button>
                                 {% if session.get('rol') in ['Administrador', 'Editor'] %}
+                                <a class="btn-tabla btn-tabla-warning" href="{{ url_for('editar_pedido', id_pedido=pedido.id_pedido) }}">Editar</a>
                                 <form method="POST" action="{{ url_for('eliminar_pedido', id_pedido=pedido.id_pedido) }}" style="display: inline;">
                                     <button
                                         type="submit"

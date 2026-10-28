@@ -103,11 +103,11 @@
                         <p>Ubicación de unidades activas</p>
                     </div>
 
-                    <select class="filtro-seguimiento">
-                        <option>Todas las unidades</option>
-                        <option>En ruta</option>
-                        <option>Detenidas</option>
-                        <option>Con retraso</option>
+                    <select class="filtro-seguimiento" id="filtro-seguimiento" aria-label="Filtrar unidades por estado">
+                        <option value="todas">Todas las unidades</option>
+                        <option value="en-ruta">En ruta</option>
+                        <option value="detenidas">Detenidas</option>
+                        <option value="retraso">Con retraso</option>
                     </select>
                 </div>
 
@@ -208,17 +208,42 @@
             return contenido;
         }
 
-        unidadesMapa.forEach((unidad) => {
-            L.circleMarker([unidad.lat, unidad.lng], {
+        const marcadoresMapa = unidadesMapa.map((unidad) => ({
+            unidad,
+            marcador: L.circleMarker([unidad.lat, unidad.lng], {
                 radius: 9,
                 color: "#ffffff",
                 weight: 2,
                 fillColor: colorPorEstado(unidad.estado),
                 fillOpacity: 0.95
             })
-                .addTo(mapaGps)
-                .bindPopup(crearContenidoPopup(unidad));
-        });
+                .bindPopup(crearContenidoPopup(unidad))
+        }));
+        const capaMarcadores = L.layerGroup().addTo(mapaGps);
+        const filtroSeguimiento = document.getElementById("filtro-seguimiento");
+
+        function actualizarMarcadores() {
+            const estadoSeleccionado = filtroSeguimiento.value;
+            capaMarcadores.clearLayers();
+
+            marcadoresMapa
+                .filter(({ unidad }) => {
+                    if (estadoSeleccionado === "todas") {
+                        return true;
+                    }
+                    if (estadoSeleccionado === "detenidas") {
+                        return unidad.estado === "Detenida";
+                    }
+                    if (estadoSeleccionado === "retraso") {
+                        return unidad.estado === "Retraso";
+                    }
+                    return unidad.estado === "En ruta";
+                })
+                .forEach(({ marcador }) => capaMarcadores.addLayer(marcador));
+        }
+
+        filtroSeguimiento.addEventListener("change", actualizarMarcadores);
+        actualizarMarcadores();
 
         if (unidadesMapa.length > 0) {
             const ubicaciones = unidadesMapa.map((unidad) => [unidad.lat, unidad.lng]);

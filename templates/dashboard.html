@@ -53,6 +53,11 @@
             <a href="/incidencias">
                  Incidencias
             </a>
+            {% if session.get('rol') == 'Administrador' %}
+            <a href="{{ url_for('reportes') }}">
+                 Reportes
+            </a>
+            {% endif %}
 
         </nav>
 
@@ -196,6 +201,14 @@
                         Registra y consulta problemas en ruta.
                     </p>
                 </a>
+
+                {% if session.get('rol') == 'Administrador' %}
+                <a href="{{ url_for('reportes') }}" class="modulo-card">
+                    <div class="modulo-icono">📄</div>
+                    <h3>Reportes</h3>
+                    <p>Descarga reportes de la operación en PDF.</p>
+                </a>
+                {% endif %}
 
             </div>
 
