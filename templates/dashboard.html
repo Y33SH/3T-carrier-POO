@@ -105,8 +105,13 @@
                 </p>
             </div>
 
-            <div class="bienvenida-icono">
-                🚛
+            <div class="bienvenida-icono" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 16h34v31H5zM39 27h11l9 10v10H39z"/>
+                    <circle cx="18" cy="49" r="6"/>
+                    <circle cx="49" cy="49" r="6"/>
+                    <path d="M48 27v10h11"/>
+                </svg>
             </div>
 
         </section>
@@ -147,7 +152,9 @@
             <div class="modulos-grid">
 
                 <a href="/clientes" class="modulo-card">
-                    <div class="modulo-icono">👥</div>
+                    <div class="modulo-icono" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </div>
                     <h3>Clientes</h3>
                     <p>
                         Consulta y registra clientes.
@@ -155,7 +162,9 @@
                 </a>
 
                 <a href="/pedidos" class="modulo-card">
-                    <div class="modulo-icono">📦</div>
+                    <div class="modulo-icono" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 8 9 5 9-5M3 8v9l9 5 9-5V8M12 13v9"/></svg>
+                    </div>
                     <h3>Pedidos</h3>
                     <p>
                         Gestiona pedidos y su estatus.
@@ -163,7 +172,9 @@
                 </a>
 
                 <a href="/operadores" class="modulo-card">
-                    <div class="modulo-icono">👷</div>
+                    <div class="modulo-icono" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6 17c.7-1.3 1.7-2 3-2s2.3.7 3 2M14 10h4M14 14h4"/></svg>
+                    </div>
                     <h3>Operadores</h3>
                     <p>
                         Consulta disponibilidad de operadores.
@@ -171,7 +182,9 @@
                 </a>
 
                 <a href="/unidades" class="modulo-card">
-                    <div class="modulo-icono">🚚</div>
+                    <div class="modulo-icono" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h11v11H3zM14 10h4l3 3v4h-7z"/><circle cx="7.5" cy="18.5" r="2.5"/><circle cx="17.5" cy="18.5" r="2.5"/></svg>
+                    </div>
                     <h3>Unidades</h3>
                     <p>
                         Administra la flota de transporte.
@@ -179,7 +192,9 @@
                 </a>
 
                 <a href="/asignaciones" class="modulo-card">
-                    <div class="modulo-icono">🔗</div>
+                    <div class="modulo-icono" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m10 13.5 4-4"/><path d="M8.5 16.5 6 19a4 4 0 0 1-5.7-5.7l5-5A4 4 0 0 1 11 8"/><path d="m15.5 7.5 2.5-2.5a4 4 0 0 1 5.7 5.7l-5 5A4 4 0 0 1 13 16"/></svg>
+                    </div>
                     <h3>Asignaciones</h3>
                     <p>
                         Asigna unidades y operadores.
@@ -187,7 +202,9 @@
                 </a>
 
                 <a href="/seguimiento" class="modulo-card">
-                    <div class="modulo-icono">📍</div>
+                    <div class="modulo-icono" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+                    </div>
                     <h3>Seguimiento</h3>
                     <p>
                         Consulta ubicación, estatus y ETA.
@@ -195,7 +212,9 @@
                 </a>
 
                 <a href="/incidencias" class="modulo-card">
-                    <div class="modulo-icono">⚠️</div>
+                    <div class="modulo-icono" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18.2A2 2 0 0 0 3.5 21h17a2 2 0 0 0 1.7-2.8L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>
+                    </div>
                     <h3>Incidencias</h3>
                     <p>
                         Registra y consulta problemas en ruta.
@@ -204,7 +223,9 @@
 
                 {% if session.get('rol') == 'Administrador' %}
                 <a href="{{ url_for('reportes') }}" class="modulo-card">
-                    <div class="modulo-icono">📄</div>
+                    <div class="modulo-icono" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg>
+                    </div>
                     <h3>Reportes</h3>
                     <p>Descarga reportes de la operación en PDF.</p>
                 </a>

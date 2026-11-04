@@ -494,7 +494,14 @@ body {
 }
 
 .bienvenida-icono {
-    font-size: 75px;
+    color: #f1b925;
+    flex: 0 0 auto;
+}
+
+.bienvenida-icono svg {
+    display: block;
+    width: 76px;
+    height: 76px;
 }
 
 
@@ -594,9 +601,25 @@ body {
 }
 
 .modulo-icono {
-    font-size: 35px;
-
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
     margin-bottom: 12px;
+    border-radius: 12px;
+    background-color: #eef3f8;
+    color: #123656;
+}
+
+.modulo-icono svg {
+    width: 26px;
+    height: 26px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .modulo-card h3 {
@@ -1323,10 +1346,21 @@ body {
     padding: 30px;
 }
 
-.mapa-icono {
-    font-size: 70px;
-
+.seguimiento-vacio-icono {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
     margin-bottom: 15px;
+    border-radius: 50%;
+    background-color: #eef3f8;
+    color: #123656;
+}
+
+.seguimiento-vacio-icono svg {
+    width: 42px;
+    height: 42px;
 }
 
 .mapa-placeholder h3 {

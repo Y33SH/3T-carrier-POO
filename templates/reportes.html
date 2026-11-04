@@ -39,25 +39,33 @@
             <h2>Reportes disponibles</h2>
             <div class="modulos-grid">
                 <article class="modulo-card">
-                    <div class="modulo-icono">📦</div>
+                    <div class="modulo-icono" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 8 9 5 9-5M3 8v9l9 5 9-5V8M12 13v9"/></svg>
+                    </div>
                     <h3>Pedidos</h3>
                     <p>Folios, clientes, rutas, tarifas y estados de los pedidos.</p>
                     <a class="boton-amarillo" href="{{ url_for('descargar_reporte', tipo='pedidos') }}">Descargar PDF</a>
                 </article>
                 <article class="modulo-card">
-                    <div class="modulo-icono">🔗</div>
+                    <div class="modulo-icono" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m10 13.5 4-4"/><path d="M8.5 16.5 6 19a4 4 0 0 1-5.7-5.7l5-5A4 4 0 0 1 11 8"/><path d="m15.5 7.5 2.5-2.5a4 4 0 0 1 5.7 5.7l-5 5A4 4 0 0 1 13 16"/></svg>
+                    </div>
                     <h3>Asignaciones</h3>
                     <p>Pedidos, operadores, unidades y fechas de asignación.</p>
                     <a class="boton-amarillo" href="{{ url_for('descargar_reporte', tipo='asignaciones') }}">Descargar PDF</a>
                 </article>
                 <article class="modulo-card">
-                    <div class="modulo-icono">⚠️</div>
+                    <div class="modulo-icono" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18.2A2 2 0 0 0 3.5 21h17a2 2 0 0 0 1.7-2.8L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg>
+                    </div>
                     <h3>Incidencias</h3>
                     <p>Incidencias por pedido, fechas, estados y soluciones.</p>
                     <a class="boton-amarillo" href="{{ url_for('descargar_reporte', tipo='incidencias') }}">Descargar PDF</a>
                 </article>
                 <article class="modulo-card">
-                    <div class="modulo-icono">👥</div>
+                    <div class="modulo-icono" aria-hidden="true">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </div>
                     <h3>Clientes</h3>
                     <p>Directorio de clientes y datos de contacto.</p>
                     <a class="boton-amarillo" href="{{ url_for('descargar_reporte', tipo='clientes') }}">Descargar PDF</a>
