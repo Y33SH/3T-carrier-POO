@@ -32,7 +32,7 @@ app = Flask(__name__)
 app.config.from_object(Config)
 # Necesario para manejar sesiones en Flask. Si no está en tu config.py, defínelo aquí:
 app.secret_key = app.config.get('SECRET_KEY', 'e902e1c0487a95a51b43705fb95e0d4e8012c16cf2285b490cf65824de21ac31')
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=12)
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 
 db.init_app(app)
 migrate = Migrate(app, db)

@@ -1,5 +1,5 @@
 (() => {
-    const twelveHours = 12 * 60 * 60 * 1000;
+    const thirtyMinutes = 30 * 60 * 1000;
     let inactivityTimer;
 
     const logout = () => {
@@ -8,7 +8,7 @@
 
     const resetInactivityTimer = () => {
         window.clearTimeout(inactivityTimer);
-        inactivityTimer = window.setTimeout(logout, twelveHours);
+        inactivityTimer = window.setTimeout(logout, thirtyMinutes);
     };
 
     ["keydown", "mousedown", "pointerdown", "scroll", "touchstart"].forEach((eventName) => {
