@@ -39,7 +39,7 @@
         </nav>
 
         <div class="sidebar-footer">
-            <a href="/">Cerrar sesión</a>
+            <a href="{{ url_for('logout') }}">Cerrar sesión</a>
         </div>
 
     </aside>
@@ -256,5 +256,6 @@
         }
     </script>
     <script src="{{ url_for('static', filename='js/table-details.js') }}" defer></script>
+    <script defer src="{{ url_for('static', filename='js/session-timeout.js') }}"></script>
 </body>
 </html>

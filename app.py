@@ -1,6 +1,6 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
+from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file, jsonify
 from flask_migrate import Migrate
-from datetime import date, datetime
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal, InvalidOperation
 from functools import wraps
 from io import BytesIO
@@ -32,9 +32,31 @@ app = Flask(__name__)
 app.config.from_object(Config)
 # Necesario para manejar sesiones en Flask. Si no está en tu config.py, defínelo aquí:
 app.secret_key = app.config.get('SECRET_KEY', 'e902e1c0487a95a51b43705fb95e0d4e8012c16cf2285b490cf65824de21ac31')
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=12)
 
 db.init_app(app)
 migrate = Migrate(app, db)
+
+@app.before_request
+def validar_expiracion_sesion():
+    if 'usuario_id' not in session:
+        return
+
+    ahora = datetime.now()
+    ultima_actividad = session.get('_ultima_actividad')
+    duracion_sesion = app.permanent_session_lifetime.total_seconds()
+
+    if (
+        session.get('_dia_sesion') != ahora.date().isoformat()
+        or not isinstance(ultima_actividad, (int, float))
+        or ahora.timestamp() - ultima_actividad >= duracion_sesion
+    ):
+        session.clear()
+        flash("Tu sesión ha expirado. Por favor, inicia sesión de nuevo.", "error")
+        return redirect(url_for('login'))
+
+    session['_ultima_actividad'] = ahora.timestamp()
+    session.permanent = True
 
 # ==========================================
 # DECORADORES PARA VALIDAR SESIÓN Y ROLES
@@ -96,6 +118,10 @@ def login():
             session['usuario_id'] = user.id_usuario
             session['usuario_nombre'] = user.nombre
             session['rol'] = user.rol # 'Administrador', 'Editor', o 'Consultor/Usuario'
+            ahora = datetime.now()
+            session['_dia_sesion'] = ahora.date().isoformat()
+            session['_ultima_actividad'] = ahora.timestamp()
+            session.permanent = True
             
             return redirect(url_for("dashboard"))
 
@@ -105,6 +131,13 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for("login"))
+
+@app.route("/session-deadline")
+@login_requerido
+def session_deadline():
+    manana = date.today() + timedelta(days=1)
+    medianoche = datetime.combine(manana, time.min).timestamp()
+    return jsonify(expires_at=medianoche)
 
 # ==========================================
 # RUTAS DEL SISTEMA
