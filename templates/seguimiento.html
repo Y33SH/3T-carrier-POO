@@ -36,6 +36,9 @@
             <a href="/asignaciones"> Asignaciones</a>
             <a href="/seguimiento" class="activo"> Seguimiento</a>
             <a href="/incidencias"> Incidencias</a>
+            {% if session.get('rol') == 'Administrador' %}
+            <a href="{{ url_for('reportes') }}">Reportes</a>
+            {% endif %}
         </nav>
 
         <div class="sidebar-footer">

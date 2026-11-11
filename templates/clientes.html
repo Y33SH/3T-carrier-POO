@@ -58,6 +58,9 @@
             <a href="/incidencias">
                  Incidencias
             </a>
+            {% if session.get('rol') == 'Administrador' %}
+            <a href="{{ url_for('reportes') }}">Reportes</a>
+            {% endif %}
 
         </nav>
 
