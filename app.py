@@ -4,8 +4,9 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal, InvalidOperation
 from functools import wraps
 from io import BytesIO
+from uuid import UUID, uuid4
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from werkzeug.security import check_password_hash # Para validar contraseñas seguras
+from werkzeug.security import check_password_hash, generate_password_hash
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import landscape, letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
@@ -85,11 +86,44 @@ def roles_requeridos(*roles):
         return wrapped
     return wrapper
 
+def tipos_servicio_sin_duplicados(servicios, id_preferido=None):
+    servicios_unicos = []
+    posicion_por_nombre = {}
+    for servicio in servicios:
+        clave = (servicio.nombre or "").strip().casefold()
+        if not clave:
+            servicios_unicos.append(servicio)
+            continue
+        posicion = posicion_por_nombre.get(clave)
+        if posicion is None:
+            posicion_por_nombre[clave] = len(servicios_unicos)
+            servicios_unicos.append(servicio)
+        elif servicio.id_tipo_servicio == id_preferido:
+            servicios_unicos[posicion] = servicio
+    return servicios_unicos
+
+def clientes_sin_duplicados(clientes, id_preferido=None):
+    clientes_unicos = []
+    posicion_por_nombre = {}
+    for cliente in clientes:
+        clave = (cliente.razon_social or "").strip().casefold()
+        if not clave:
+            clientes_unicos.append(cliente)
+            continue
+        posicion = posicion_por_nombre.get(clave)
+        if posicion is None:
+            posicion_por_nombre[clave] = len(clientes_unicos)
+            clientes_unicos.append(cliente)
+        elif cliente.id_cliente == id_preferido:
+            clientes_unicos[posicion] = cliente
+    return clientes_unicos
+
 # ==========================================
 # RUTAS DE AUTENTICACIÓN
 # ==========================================
 
 @app.route("/", methods=["GET", "POST"])
+@app.route("/login", methods=["GET", "POST"])
 def login():
     # Si ya hay sesión activa, mandarlo directo al dashboard
     if 'usuario_id' in session:
@@ -122,8 +156,22 @@ def login():
             session['_dia_sesion'] = ahora.date().isoformat()
             session['_ultima_actividad'] = ahora.timestamp()
             session.permanent = True
-            
-            return redirect(url_for("dashboard"))
+
+            if user.rol in ("Administrador", "Editor"):
+                return redirect(url_for("dashboard"))
+            if user.rol == "Consultor":
+                return redirect(url_for("mis_pedidos"))
+            if user.rol == "Usuario":
+                session.clear()
+                flash(
+                    "Tu cuenta está en revisión. Contacta al administrador para habilitar tu acceso.",
+                    "warning",
+                )
+                return redirect(url_for("login"))
+
+            session.clear()
+            flash("Tu cuenta no tiene un rol habilitado. Contacta al administrador.", "error")
+            return redirect(url_for("login"))
 
     return render_template("login.html")
 
@@ -146,21 +194,17 @@ def session_deadline():
 @app.route("/dashboard")
 @login_requerido # Todos los logueados pueden ver el dashboard
 def dashboard():
-    pedidos_activos = Pedido.query.filter(
-        Pedido.estado.in_(["REGISTRADO", "ASIGNADO", "EN TRANSITO"])
-    ).count()
-
-    unidades_disponibles = Unidad.query.filter_by(
-        estado="DISPONIBLE"
-    ).count()
-
-    operadores_disponibles = Operador.query.filter_by(
-        disponibilidad=True
-    ).count()
-
-    incidencias_abiertas = Incidencia.query.filter(
-        Incidencia.estado.in_(["ABIERTA", "EN PROCESO"])
-    ).count()
+    if session.get("rol") == "Consultor":
+        pedidos_activos = unidades_disponibles = operadores_disponibles = incidencias_abiertas = 0
+    else:
+        pedidos_activos = Pedido.query.filter(
+            Pedido.estado.in_(["REGISTRADO", "ASIGNADO", "EN TRANSITO"])
+        ).count()
+        unidades_disponibles = Unidad.query.filter_by(estado="DISPONIBLE").count()
+        operadores_disponibles = Operador.query.filter_by(disponibilidad=True).count()
+        incidencias_abiertas = Incidencia.query.filter(
+            Incidencia.estado.in_(["ABIERTA", "EN PROCESO"])
+        ).count()
 
     return render_template(
         "dashboard.html",
@@ -168,7 +212,7 @@ def dashboard():
         unidades_disponibles=unidades_disponibles,
         operadores_disponibles=operadores_disponibles,
         incidencias_abiertas=incidencias_abiertas,
-        rol=session.get('rol') # Pasamos el rol a la plantilla por si quieres ocultar botones
+        rol=session.get('rol') 
     )
 
 @app.route("/reportes")
@@ -337,8 +381,423 @@ def descargar_reporte(tipo):
         download_name=f"reporte-{tipo}-{date.today().isoformat()}.pdf",
     )
 
+def enviar_pdf_detalle(titulo, filas, nombre_archivo):
+    salida = BytesIO()
+    estilos = getSampleStyleSheet()
+    estilo_celda = ParagraphStyle(
+        "DetailCell",
+        parent=estilos["BodyText"],
+        fontSize=9,
+        leading=12,
+    )
+    estilo_encabezado = ParagraphStyle(
+        "DetailHeader",
+        parent=estilos["BodyText"],
+        fontName="Helvetica-Bold",
+        fontSize=9,
+        leading=12,
+        textColor=colors.white,
+    )
+    documento = SimpleDocTemplate(
+        salida,
+        pagesize=letter,
+        rightMargin=0.65 * inch,
+        leftMargin=0.65 * inch,
+        topMargin=0.65 * inch,
+        bottomMargin=0.65 * inch,
+        title=titulo,
+    )
+    datos_tabla = [
+        [
+            Paragraph("Campo", estilo_encabezado),
+            Paragraph("Detalle", estilo_encabezado),
+        ]
+    ]
+    datos_tabla.extend(
+        [
+            Paragraph(escape(str(campo)), estilo_celda),
+            Paragraph(escape(str(valor if valor is not None else "-")), estilo_celda),
+        ]
+        for campo, valor in filas
+    )
+    tabla = Table(datos_tabla, colWidths=[1.8 * inch, 5.0 * inch], repeatRows=1)
+    tabla.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#102f50")),
+        ("GRID", (0, 0), (-1, -1), 0.35, colors.HexColor("#d0d5dd")),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f2f4f7")]),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 7),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 7),
+        ("TOPPADDING", (0, 0), (-1, -1), 7),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+    ]))
+    documento.build([
+        Paragraph(escape(titulo), estilos["Title"]),
+        Paragraph(
+            f"Generado el {datetime.now().strftime('%d/%m/%Y %H:%M')}",
+            estilos["Normal"],
+        ),
+        Spacer(1, 0.2 * inch),
+        tabla,
+    ])
+    salida.seek(0)
+    return send_file(
+        salida,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=nombre_archivo,
+    )
+
+@app.route("/descargar-carta-porte/<int:id_asignacion>")
+@roles_requeridos("Administrador", "Editor")
+def descargar_carta_porte(id_asignacion):
+    asignacion = Asignacion.query.get_or_404(id_asignacion)
+    pedido = asignacion.pedido
+    cliente = Cliente.query.get_or_404(pedido.id_cliente)
+    servicio = TipoServicio.query.get_or_404(pedido.id_tipo_servicio)
+
+    def fecha_texto(valor):
+        return valor.strftime("%d/%m/%Y %H:%M") if valor else "-"
+
+    filas = [
+        ("Asignación", asignacion.id_asignacion),
+        ("Pedido / folio", f"{pedido.folio} (#{pedido.id_pedido})"),
+        ("Cliente", cliente.razon_social),
+        ("Tipo de servicio", servicio.nombre),
+        ("Origen", pedido.origen),
+        ("Destino", pedido.destino),
+        ("Mercancía", pedido.mercancia),
+        ("Tarifa", f"${pedido.tarifa}" if pedido.tarifa is not None else "-"),
+        ("Fecha estimada", fecha_texto(pedido.fecha_estimada)),
+        ("Estado del pedido", pedido.estado),
+        ("Operador", asignacion.operador.nombre),
+        ("Licencia", asignacion.operador.numero_licencia),
+        ("Unidad", asignacion.unidad.numero_economico),
+        ("Placas", asignacion.unidad.placas),
+        ("Marca / modelo", f"{asignacion.unidad.marca or '-'} / {asignacion.unidad.modelo or '-'}"),
+        ("Fecha de asignación", fecha_texto(asignacion.fecha_asignacion)),
+        ("Fecha de inicio", fecha_texto(asignacion.fecha_inicio)),
+        ("Fecha de fin", fecha_texto(asignacion.fecha_fin)),
+        ("Estado de asignación", asignacion.estado),
+    ]
+    return enviar_pdf_detalle(
+        "Carta porte - 3T Carrier",
+        filas,
+        f"carta-porte-{id_asignacion}.pdf",
+    )
+
+@app.route("/descargar-reporte-incidencia/<int:id_incidencia>")
+@roles_requeridos("Administrador", "Editor")
+def descargar_reporte_incidencia(id_incidencia):
+    incidencia = Incidencia.query.get_or_404(id_incidencia)
+    pedido = Pedido.query.get_or_404(incidencia.id_pedido)
+    cliente = Cliente.query.get_or_404(pedido.id_cliente)
+    filas = [
+        ("Incidencia", incidencia.id_incidencia),
+        ("Pedido / folio", f"{pedido.folio} (#{pedido.id_pedido})"),
+        ("Cliente", cliente.razon_social),
+        ("Tipo de falla", incidencia.tipo),
+        ("Descripción", incidencia.descripcion),
+        ("Fecha y hora", incidencia.fecha_hora.strftime("%d/%m/%Y %H:%M") if incidencia.fecha_hora else "-"),
+        ("Estado", incidencia.estado),
+        ("Solución", incidencia.solucion),
+    ]
+    return enviar_pdf_detalle(
+        "Reporte de incidencia - 3T Carrier",
+        filas,
+        f"incidencia-{incidencia.id_incidencia}.pdf",
+    )
+
+def consultor_actual():
+    consultor = Usuario.query.filter_by(
+        id_usuario=session.get("usuario_id"),
+        rol="Consultor",
+    ).first()
+    if consultor is None or consultor.id_cliente is None:
+        flash(
+            "Tu cuenta de Consultor no está vinculada a un cliente. Contacta al administrador.",
+            "error",
+        )
+        return None
+    return consultor
+
+@app.route("/mis-pedidos")
+@roles_requeridos("Consultor")
+def mis_pedidos():
+    consultor = consultor_actual()
+    if consultor is None:
+        return redirect(url_for("dashboard"))
+
+    lista_pedidos = (
+        Pedido.query
+        .filter(
+            Pedido.id_cliente == consultor.id_cliente,
+            Pedido.estado != "CANCELADO POR CLIENTE",
+        )
+        .order_by(Pedido.id_pedido.desc())
+        .all()
+    )
+    return render_template("mis_pedidos.html", pedidos=lista_pedidos)
+
+@app.route("/mis-pedidos/<int:id_pedido>/cancelar", methods=["POST"])
+@roles_requeridos("Consultor")
+def cancelar_cotizacion(id_pedido):
+    consultor = consultor_actual()
+    if consultor is None:
+        return redirect(url_for("dashboard"))
+
+    pedido = Pedido.query.filter_by(
+        id_pedido=id_pedido,
+        id_cliente=consultor.id_cliente,
+    ).first_or_404()
+    if pedido.estado != "Pendiente de Aprobar" or not pedido.folio.startswith("COT-"):
+        flash("Solo puedes cancelar cotizaciones que aún están pendientes de aprobación.", "warning")
+        return redirect(url_for("mis_pedidos"))
+
+    tiene_registros_relacionados = any(
+        consulta.filter_by(id_pedido=pedido.id_pedido).first() is not None
+        for consulta in (Asignacion.query, Seguimiento.query, Incidencia.query)
+    )
+    if tiene_registros_relacionados:
+        flash("No se puede cancelar esta cotización porque ya tiene movimientos relacionados.", "warning")
+        return redirect(url_for("mis_pedidos"))
+
+    pedido.estado = "CANCELADO POR CLIENTE"
+    try:
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        flash("No se pudo cancelar la cotización. Inténtalo nuevamente.", "error")
+    else:
+        flash("La cotización se canceló y se quitó de los pedidos activos.", "success")
+
+    return redirect(url_for("mis_pedidos"))
+
+@app.route("/solicitar-cotizacion", methods=["GET", "POST"])
+@roles_requeridos("Consultor")
+def solicitar_cotizacion():
+    consultor = consultor_actual()
+    if consultor is None:
+        return redirect(url_for("dashboard"))
+
+    servicios = tipos_servicio_sin_duplicados(
+        TipoServicio.query.filter_by(activo=True)
+        .order_by(TipoServicio.nombre, TipoServicio.id_tipo_servicio)
+        .all()
+    )
+    token_solicitud = uuid4().hex
+    if request.method == "POST":
+        origen = (request.form.get("origen") or "").strip()
+        destino = (request.form.get("destino") or "").strip()
+        id_servicio_form = (request.form.get("id_tipo_servicio") or "").strip()
+        try:
+            token_solicitud = UUID(hex=request.form.get("token_solicitud", "")).hex
+        except ValueError:
+            flash("El formulario venció o no es válido. Inténtalo nuevamente.", "warning")
+            return redirect(url_for("solicitar_cotizacion"))
+
+        if not origen or not destino:
+            flash("Indica el origen y el destino para solicitar la cotización.", "warning")
+        else:
+            try:
+                id_tipo_servicio = int(id_servicio_form)
+            except ValueError:
+                flash("Selecciona un tipo de servicio válido.", "warning")
+            else:
+                servicio = TipoServicio.query.filter_by(
+                    id_tipo_servicio=id_tipo_servicio,
+                    activo=True,
+                ).first()
+                if servicio is None:
+                    flash("El servicio seleccionado no está disponible. Elige otro.", "warning")
+                else:
+                    folio = f"COT-{datetime.now():%Y%m%d}-{token_solicitud.upper()}"
+                    solicitud_existente = Pedido.query.filter_by(folio=folio).first()
+                    if solicitud_existente is not None:
+                        if solicitud_existente.id_cliente != consultor.id_cliente:
+                            flash("No se pudo validar la solicitud. Inténtalo nuevamente.", "error")
+                            return redirect(url_for("solicitar_cotizacion"))
+                        flash("Esta solicitud ya se había enviado; no se creó otra cotización.", "info")
+                        return redirect(url_for("mis_pedidos"))
+
+                    pedido = Pedido(
+                        id_cliente=consultor.id_cliente,
+                        id_tipo_servicio=servicio.id_tipo_servicio,
+                        folio=folio,
+                        origen=origen,
+                        destino=destino,
+                        tarifa=Decimal("0.00"),
+                        estado="Pendiente de Aprobar",
+                    )
+                    try:
+                        db.session.add(pedido)
+                        db.session.commit()
+                    except IntegrityError:
+                        db.session.rollback()
+                        solicitud_existente = Pedido.query.filter_by(folio=folio).first()
+                        if (
+                            solicitud_existente is not None
+                            and solicitud_existente.id_cliente == consultor.id_cliente
+                        ):
+                            flash("Esta solicitud ya se había enviado; no se creó otra cotización.", "info")
+                            return redirect(url_for("mis_pedidos"))
+                        flash("No se pudo guardar la solicitud. Inténtalo nuevamente.", "error")
+                    except SQLAlchemyError:
+                        db.session.rollback()
+                        flash("No se pudo guardar la solicitud. Inténtalo nuevamente.", "error")
+                    else:
+                        flash("La solicitud de cotización se envió para aprobación.", "success")
+                        return redirect(url_for("mis_pedidos"))
+
+        return render_template(
+            "cotizacion.html",
+            servicios=servicios,
+            datos=request.form,
+            token_solicitud=token_solicitud,
+        )
+
+    return render_template(
+        "cotizacion.html",
+        servicios=servicios,
+        datos={},
+        token_solicitud=token_solicitud,
+    )
+
+@app.route("/admin/consultores", methods=["GET", "POST"])
+@roles_requeridos("Administrador")
+def administrar_consultores():
+    id_usuario_preferido = None
+    id_cliente_preferido = None
+    if request.method == "POST":
+        try:
+            id_usuario = int(request.form.get("id_usuario", ""))
+            id_cliente = int(request.form.get("id_cliente", ""))
+            id_usuario_preferido = id_usuario
+            id_cliente_preferido = id_cliente
+        except (TypeError, ValueError):
+            flash("Selecciona una cuenta de Consultor y un cliente válidos.", "warning")
+        else:
+            consultor = Usuario.query.filter(
+                Usuario.id_usuario == id_usuario,
+                db.func.lower(db.func.trim(Usuario.rol)).in_(("consultor", "usuario")),
+            ).first()
+            cliente = db.session.get(Cliente, id_cliente)
+            if consultor is None or cliente is None:
+                flash("La cuenta de usuario o el cliente seleccionado no existen.", "warning")
+            else:
+                consultor.id_cliente = cliente.id_cliente
+                consultor.rol = "Consultor"
+                try:
+                    db.session.commit()
+                except SQLAlchemyError:
+                    db.session.rollback()
+                    flash("No se pudo guardar la vinculación. Inténtalo nuevamente.", "error")
+                else:
+                    flash("La cuenta de Consultor quedó vinculada al cliente.", "success")
+                    return redirect(url_for("administrar_consultores"))
+
+    consultores = (
+        Usuario.query
+        .filter(db.func.lower(db.func.trim(Usuario.rol)).in_(("consultor", "usuario")))
+        .order_by(Usuario.usuario)
+        .all()
+    )
+    clientes_registrados = Cliente.query.order_by(
+        db.func.lower(db.func.trim(Cliente.razon_social)),
+        Cliente.id_cliente,
+    ).all()
+    clientes_por_consultor = {
+        consultor.id_usuario: clientes_sin_duplicados(
+            clientes_registrados,
+            id_preferido=(
+                id_cliente_preferido
+                if consultor.id_usuario == id_usuario_preferido
+                else consultor.id_cliente
+            ),
+        )
+        for consultor in consultores
+    }
+    return render_template(
+        "usuarios_consultor.html",
+        consultores=consultores,
+        clientes_por_consultor=clientes_por_consultor,
+    )
+
+@app.route("/admin/usuarios/<int:id_usuario>/eliminar", methods=["POST"])
+@roles_requeridos("Administrador")
+def eliminar_usuario_admin(id_usuario):
+    if id_usuario == session.get("usuario_id"):
+        flash("No puedes eliminar la cuenta con la que iniciaste sesión.", "warning")
+        return redirect(url_for("administrar_consultores"))
+
+    usuario = Usuario.query.filter(
+        Usuario.id_usuario == id_usuario,
+        db.func.lower(db.func.trim(Usuario.rol)).in_(("usuario", "consultor")),
+    ).first()
+    if usuario is None:
+        flash("La cuenta seleccionada no existe o no puede eliminarse desde este módulo.", "warning")
+        return redirect(url_for("administrar_consultores"))
+
+    try:
+        db.session.delete(usuario)
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        flash("No se pudo eliminar la cuenta. Inténtalo nuevamente.", "error")
+    else:
+        flash("La cuenta se eliminó correctamente.", "success")
+
+    return redirect(url_for("administrar_consultores"))
+
+@app.route("/admin/crear-usuario", methods=["GET", "POST"])
+@roles_requeridos("Administrador")
+def crear_usuario_admin():
+    if request.method == "POST":
+        nombre_usuario = (request.form.get("nombre_usuario") or "").strip()
+        password = request.form.get("password") or ""
+        rol = request.form.get("rol") or ""
+
+        if rol not in ("Usuario", "Consultor"):
+            flash("Solo se pueden crear cuentas con rol Usuario o Consultor.", "error")
+        elif not nombre_usuario or len(nombre_usuario) > 50:
+            flash("El nombre de usuario es obligatorio y no debe exceder 50 caracteres.", "error")
+        elif not password:
+            flash("La contraseña es obligatoria.", "error")
+        elif Usuario.query.filter_by(usuario=nombre_usuario).first():
+            flash("Ese nombre de usuario ya está registrado.", "error")
+        else:
+            usuario = Usuario(
+                nombre=nombre_usuario,
+                usuario=nombre_usuario,
+                contrasena=generate_password_hash(password),
+                rol=rol,
+            )
+            try:
+                db.session.add(usuario)
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+                flash("Ese nombre de usuario ya está registrado.", "error")
+            except SQLAlchemyError:
+                db.session.rollback()
+                flash("No se pudo crear la cuenta. Inténtalo nuevamente.", "error")
+            else:
+                flash(
+                    "La cuenta se creó correctamente. Vincula el Consultor a un cliente desde el menú si corresponde.",
+                    "success",
+                )
+                return redirect(url_for("crear_usuario_admin"))
+
+        return render_template(
+            "crear_usuario.html",
+            nombre_usuario=nombre_usuario,
+            rol_seleccionado=rol,
+        )
+
+    return render_template("crear_usuario.html", nombre_usuario="", rol_seleccionado="")
+
 @app.route("/clientes")
-@login_requerido
+@roles_requeridos("Administrador")
 def clientes():
     lista_clientes = Cliente.query.all()
     return render_template("clientes.html", clientes=lista_clientes)
@@ -364,6 +823,13 @@ def nuevo_cliente():
 
         if not datos_cliente["razon_social"] or not datos_cliente["razon_social"].strip():
             flash("Parece que olvidaste la Razón Social. Este dato es obligatorio para registrar al cliente.", "error")
+            return redirect(url_for("nuevo_cliente"))
+
+        nombre_empresa = datos_cliente["razon_social"].strip()
+        if Cliente.query.filter(
+            db.func.lower(db.func.trim(Cliente.razon_social)) == nombre_empresa.lower()
+        ).first():
+            flash("Ya existe una empresa registrada con esa razón social.", "warning")
             return redirect(url_for("nuevo_cliente"))
             
         if not datos_cliente["nombre_contacto"] or not datos_cliente["nombre_contacto"].strip():
@@ -424,6 +890,17 @@ def editar_cliente(id_cliente):
     )
     datos_cliente = {campo: request.form.get(campo) for campo in campos}
 
+    nombre_empresa = (datos_cliente["razon_social"] or "").strip()
+    if not nombre_empresa:
+        flash("La razón social es obligatoria.", "warning")
+        return redirect(url_for("clientes"))
+    if Cliente.query.filter(
+        db.func.lower(db.func.trim(Cliente.razon_social)) == nombre_empresa.lower(),
+        Cliente.id_cliente != id_cliente,
+    ).first():
+        flash("Ya existe otra empresa registrada con esa razón social.", "warning")
+        return redirect(url_for("clientes"))
+
     rfc = datos_cliente["rfc"]
     if rfc and Cliente.query.filter(
         Cliente.rfc == rfc,
@@ -463,9 +940,11 @@ def eliminar_cliente(id_cliente):
     return redirect(url_for("clientes"))
     
 @app.route("/pedidos")
-@login_requerido
+@roles_requeridos("Administrador", "Editor")
 def pedidos():
-    lista_pedidos = Pedido.query.all()
+    lista_pedidos = Pedido.query.filter(
+        Pedido.estado != "CANCELADO POR CLIENTE"
+    ).all()
     return render_template("pedidos.html", pedidos=lista_pedidos)
 
 @app.route("/nuevo-pedido", methods=["GET", "POST"])
@@ -527,8 +1006,15 @@ def nuevo_pedido():
             flash("No pudimos guardar el pedido en este momento. Revisa los datos e inténtalo de nuevo.", "error")
             return redirect(url_for("nuevo_pedido"))
 
-    clientes = Cliente.query.all()
-    servicios = TipoServicio.query.all()
+    clientes = clientes_sin_duplicados(
+        Cliente.query.order_by(
+            db.func.lower(db.func.trim(Cliente.razon_social)),
+            Cliente.id_cliente,
+        ).all()
+    )
+    servicios = tipos_servicio_sin_duplicados(
+        TipoServicio.query.order_by(TipoServicio.nombre, TipoServicio.id_tipo_servicio).all()
+    )
     return render_template("nuevo_pedido.html", clientes=clientes, servicios=servicios)
 
 @app.route("/eliminar_pedido/<int:id_pedido>", methods=["POST"])
@@ -551,8 +1037,17 @@ def eliminar_pedido(id_pedido):
 @roles_requeridos('Administrador', 'Editor')
 def editar_pedido(id_pedido):
     pedido = Pedido.query.get_or_404(id_pedido)
-    clientes = Cliente.query.all()
-    servicios = TipoServicio.query.all()
+    clientes = clientes_sin_duplicados(
+        Cliente.query.order_by(
+            db.func.lower(db.func.trim(Cliente.razon_social)),
+            Cliente.id_cliente,
+        ).all(),
+        id_preferido=pedido.id_cliente,
+    )
+    servicios = tipos_servicio_sin_duplicados(
+        TipoServicio.query.order_by(TipoServicio.nombre, TipoServicio.id_tipo_servicio).all(),
+        id_preferido=pedido.id_tipo_servicio,
+    )
 
     if request.method == "POST":
         try:
@@ -662,7 +1157,7 @@ def editar_pedido(id_pedido):
     )
 
 @app.route("/operadores")
-@login_requerido
+@roles_requeridos("Administrador")
 def operadores():
     lista_operadores = Operador.query.all()
     return render_template("operadores.html", operadores=lista_operadores)
@@ -809,7 +1304,7 @@ def eliminar_operador(id_operador):
     return redirect(url_for("operadores"))
 
 @app.route("/unidades")
-@login_requerido
+@roles_requeridos("Administrador")
 def unidades():
     lista_unidades = Unidad.query.all()
     return render_template("unidades.html", unidades=lista_unidades)
@@ -912,7 +1407,7 @@ def eliminar_unidad(id_unidad):
     return redirect(url_for("unidades"))
 
 @app.route("/asignaciones")
-@login_requerido
+@roles_requeridos("Administrador", "Editor")
 def asignaciones():
     lista_asignaciones = Asignacion.query.all()
     return render_template("asignaciones.html", asignaciones=lista_asignaciones)
@@ -921,7 +1416,9 @@ def asignaciones():
 @app.route("/nueva-asignacion", methods=["GET", "POST"])
 @roles_requeridos('Administrador', 'Editor')
 def nueva_asignacion():
-    pedidos = Pedido.query.order_by(Pedido.folio).all()
+    pedidos = Pedido.query.filter(
+        Pedido.estado != "CANCELADO POR CLIENTE"
+    ).order_by(Pedido.folio).all()
     operadores = Operador.query.filter_by(disponibilidad=True).order_by(Operador.nombre).all()
     unidades = Unidad.query.filter(
         db.func.upper(db.func.trim(Unidad.estado)) == "DISPONIBLE"
@@ -949,7 +1446,10 @@ def nueva_asignacion():
             id_pedido = int(id_pedido_form)
             id_operador = int(id_operador_form)
             id_unidad = int(id_unidad_form)
-            pedido_valido = Pedido.query.filter_by(id_pedido=id_pedido).first()
+            pedido_valido = Pedido.query.filter(
+                Pedido.id_pedido == id_pedido,
+                Pedido.estado != "CANCELADO POR CLIENTE",
+            ).first()
             operador_valido = Operador.query.filter_by(
                 id_operador=id_operador,
                 disponibilidad=True,
@@ -1008,7 +1508,9 @@ def nueva_asignacion():
 @roles_requeridos('Administrador', 'Editor')
 def editar_asignacion(id):
     asignacion = Asignacion.query.get_or_404(id)
-    pedidos = Pedido.query.order_by(Pedido.folio).all()
+    pedidos = Pedido.query.filter(
+        Pedido.estado != "CANCELADO POR CLIENTE"
+    ).order_by(Pedido.folio).all()
     operadores = Operador.query.filter(
         (Operador.disponibilidad.is_(True)) | (Operador.id_operador == asignacion.id_operador)
     ).order_by(Operador.nombre).all()
@@ -1019,7 +1521,22 @@ def editar_asignacion(id):
 
     if request.method == "POST":
         try:
-            asignacion.id_pedido = int(request.form.get("id_pedido", ""))
+            id_pedido = int(request.form.get("id_pedido", ""))
+            pedido_valido = Pedido.query.filter(
+                Pedido.id_pedido == id_pedido,
+                Pedido.estado != "CANCELADO POR CLIENTE",
+            ).first()
+            if pedido_valido is None:
+                db.session.rollback()
+                flash("No puedes asignar un pedido cancelado. Selecciona otro pedido.", "warning")
+                return render_template(
+                    "nueva_asignacion.html",
+                    asignacion=asignacion,
+                    pedidos=pedidos,
+                    operadores=operadores,
+                    unidades=unidades,
+                )
+            asignacion.id_pedido = id_pedido
             asignacion.id_operador = int(request.form.get("id_operador", ""))
             asignacion.id_unidad = int(request.form.get("id_unidad", ""))
             asignacion.fecha_asignacion = datetime.fromisoformat(request.form.get("fecha_asignacion", ""))
@@ -1061,10 +1578,25 @@ def eliminar_asignacion(id):
 @app.route("/seguimiento")
 @login_requerido
 def seguimiento():
-    lista_seguimientos = Seguimiento.query.all()
-    asignaciones_activas = Asignacion.query.filter(
+    consultor = consultor_actual() if session.get("rol") == "Consultor" else None
+    if session.get("rol") == "Consultor" and consultor is None:
+        return redirect(url_for("dashboard"))
+
+    pedidos_consultor = Pedido.query.filter_by(id_cliente=consultor.id_cliente) if consultor else None
+    lista_seguimientos = (
+        Seguimiento.query.filter(Seguimiento.id_pedido.in_(pedidos_consultor.with_entities(Pedido.id_pedido)))
+        .all()
+        if consultor
+        else Seguimiento.query.all()
+    )
+    asignaciones_query = Asignacion.query.filter(
         Asignacion.estado.in_(("ASIGNADA", "EN CURSO"))
-    ).all()
+    )
+    if consultor:
+        asignaciones_query = asignaciones_query.filter(
+            Asignacion.id_pedido.in_(pedidos_consultor.with_entities(Pedido.id_pedido))
+        )
+    asignaciones_activas = asignaciones_query.all()
     seguimientos_recientes = (
         Seguimiento.query
         .filter(Seguimiento.id_pedido.in_([a.id_pedido for a in asignaciones_activas]))
@@ -1120,7 +1652,7 @@ def seguimiento():
     )
 
 @app.route("/incidencias")
-@login_requerido
+@roles_requeridos("Administrador", "Editor")
 def incidencias():
     lista_incidencias = Incidencia.query.all()
     return render_template("incidencias.html", incidencias=lista_incidencias)
@@ -1129,7 +1661,9 @@ def incidencias():
 @app.route("/nueva-incidencia", methods=["GET", "POST"])
 @roles_requeridos('Administrador', 'Editor')
 def nueva_incidencia():
-    pedidos = Pedido.query.order_by(Pedido.folio).all()
+    pedidos = Pedido.query.filter(
+        Pedido.estado != "CANCELADO POR CLIENTE"
+    ).order_by(Pedido.folio).all()
     if request.method == "POST":
         id_pedido_form = (request.form.get("id_pedido") or "").strip()
         tipo = (request.form.get("tipo") or "").strip()
@@ -1151,7 +1685,10 @@ def nueva_incidencia():
 
         try:
             id_pedido = int(id_pedido_form)
-            pedido = Pedido.query.filter_by(id_pedido=id_pedido).first()
+            pedido = Pedido.query.filter(
+                Pedido.id_pedido == id_pedido,
+                Pedido.estado != "CANCELADO POR CLIENTE",
+            ).first()
             if pedido is None:
                 flash("El pedido seleccionado ya no está disponible. Elige otro de la lista.", "warning")
                 return render_template("nueva_incidencia.html", pedidos=pedidos, datos_incidencia=request.form)
@@ -1183,7 +1720,9 @@ def nueva_incidencia():
 @roles_requeridos('Administrador', 'Editor')
 def editar_incidencia(id):
     incidencia = Incidencia.query.get_or_404(id)
-    pedidos = Pedido.query.order_by(Pedido.folio).all()
+    pedidos = Pedido.query.filter(
+        Pedido.estado != "CANCELADO POR CLIENTE"
+    ).order_by(Pedido.folio).all()
 
     if request.method == "POST":
         try:
@@ -1205,7 +1744,10 @@ def editar_incidencia(id):
                 return render_template("nueva_incidencia.html", incidencia=incidencia, pedidos=pedidos, datos_incidencia=request.form)
 
             incidencia.id_pedido = int(id_pedido_form)
-            if Pedido.query.filter_by(id_pedido=incidencia.id_pedido).first() is None:
+            if Pedido.query.filter(
+                Pedido.id_pedido == incidencia.id_pedido,
+                Pedido.estado != "CANCELADO POR CLIENTE",
+            ).first() is None:
                 flash("El pedido seleccionado ya no está disponible. Elige otro de la lista.", "warning")
                 return render_template("nueva_incidencia.html", incidencia=incidencia, pedidos=pedidos, datos_incidencia=request.form)
             incidencia.tipo = tipo

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3T Carrier | Solicitar cotización</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+</head>
+<body class="dashboard-body">
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <img src="{{ url_for('static', filename='css/IMG/logo-3t.png') }}" alt="Logo 3T Carrier">
+        </div>
+        <nav class="sidebar-menu">
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('seguimiento') }}">Seguimiento</a>
+            <a href="{{ url_for('mis_pedidos') }}">Mis pedidos</a>
+            <a href="{{ url_for('solicitar_cotizacion') }}" class="activo">Solicitar cotización</a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('logout') }}">Cerrar sesión</a>
+        </div>
+    </aside>
+
+    <main class="dashboard-contenido">
+        <header class="dashboard-header">
+            <div>
+                <h1>Solicitar cotización</h1>
+                <p>Indica la ruta y el tipo de servicio para enviar tu solicitud.</p>
+            </div>
+            <a class="boton-secundario" href="{{ url_for('mis_pedidos') }}"><span class="icono-boton" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7h18v13H3zM3 7l2-4h14l2 4M8 11h8"/></svg></span> Volver a mis pedidos</a>
+        </header>
+
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+            {% if mensajes %}
+                <div role="status" aria-live="polite">
+                    {% for categoria, mensaje in mensajes %}
+                        <p class="mensaje-{{ categoria }}">{{ mensaje }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <section class="formulario-contenedor">
+            <form id="form-cotizacion" method="POST" action="{{ url_for('solicitar_cotizacion') }}">
+                <input type="hidden" name="token_solicitud" value="{{ token_solicitud }}">
+                <div class="form-grid">
+                    <div class="campo-form">
+                        <label for="origen">Origen</label>
+                        <input id="origen" name="origen" type="text" maxlength="150"
+                               value="{{ datos.get('origen', '') }}" required>
+                    </div>
+                    <div class="campo-form">
+                        <label for="destino">Destino</label>
+                        <input id="destino" name="destino" type="text" maxlength="150"
+                               value="{{ datos.get('destino', '') }}" required>
+                    </div>
+                    <div class="campo-form">
+                        <label for="id_tipo_servicio">Tipo de servicio</label>
+                        <select id="id_tipo_servicio" name="id_tipo_servicio" required>
+                            <option value="">Seleccionar servicio</option>
+                            {% for servicio in servicios %}
+                            <option value="{{ servicio.id_tipo_servicio }}"
+                                {% if datos.get('id_tipo_servicio', '')|string == servicio.id_tipo_servicio|string %}selected{% endif %}>
+                                {{ servicio.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                {% if not servicios %}
+                <p>No hay tipos de servicio activos. Contacta al administrador para continuar.</p>
+                {% endif %}
+                <button id="enviar-cotizacion" class="boton-amarillo" type="submit" {% if not servicios %}disabled{% endif %}>
+                    Enviar solicitud
+                </button>
+            </form>
+        </section>
+    </main>
+    <script defer src="{{ url_for('static', filename='js/session-timeout.js') }}"></script>
+    <script>
+        document.getElementById("form-cotizacion").addEventListener("submit", function () {
+            const boton = document.getElementById("enviar-cotizacion");
+            boton.disabled = true;
+            boton.textContent = "Enviando...";
+        });
+    </script>
+</body>
+</html>

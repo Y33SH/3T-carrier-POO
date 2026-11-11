@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3T Carrier | Mis pedidos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+</head>
+<body class="dashboard-body">
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <img src="{{ url_for('static', filename='css/IMG/logo-3t.png') }}" alt="Logo 3T Carrier">
+        </div>
+        <nav class="sidebar-menu">
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('seguimiento') }}">Seguimiento</a>
+            <a href="{{ url_for('mis_pedidos') }}" class="activo">Mis pedidos</a>
+            <a href="{{ url_for('solicitar_cotizacion') }}">Solicitar cotización</a>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('logout') }}">Cerrar sesión</a>
+        </div>
+    </aside>
+
+    <main class="dashboard-contenido">
+        <header class="dashboard-header">
+            <div>
+                <h1>Mis pedidos</h1>
+                <p>Consulta únicamente los pedidos asociados a tu cuenta.</p>
+            </div>
+            <a class="boton-amarillo" href="{{ url_for('solicitar_cotizacion') }}"><span class="icono-boton" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M8 13h8M8 17h5"/></svg></span> Solicitar cotización</a>
+        </header>
+
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+            {% if mensajes %}
+                <div role="status" aria-live="polite">
+                    {% for categoria, mensaje in mensajes %}
+                        <p class="mensaje-{{ categoria }}">{{ mensaje }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <section class="tabla-contenedor">
+            <div class="tabla-responsive">
+                <table class="tabla-clientes">
+                    <thead>
+                        <tr>
+                            <th>Folio</th>
+                            <th>Servicio</th>
+                            <th>Origen</th>
+                            <th>Destino</th>
+                            <th>Fecha estimada</th>
+                            <th>Estado</th>
+                            <th>Tarifa</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pedido in pedidos %}
+                        <tr>
+                            <td>{{ pedido.folio }}</td>
+                            <td>{{ pedido.tipo_servicio.nombre }}</td>
+                            <td>{{ pedido.origen }}</td>
+                            <td>{{ pedido.destino }}</td>
+                            <td>{{ pedido.fecha_estimada.strftime('%d/%m/%Y %H:%M') if pedido.fecha_estimada else '-' }}</td>
+                            <td>
+                                {% if pedido.estado == 'CANCELADO POR CLIENTE' %}
+                                Cancelado por ti
+                                {% else %}
+                                {{ pedido.estado }}
+                                {% endif %}
+                            </td>
+                            <td>${{ pedido.tarifa if pedido.tarifa is not none else 'Pendiente' }}</td>
+                            <td>
+                                {% if pedido.estado == 'Pendiente de Aprobar' and pedido.folio.startswith('COT-') %}
+                                <form method="POST" action="{{ url_for('cancelar_cotizacion', id_pedido=pedido.id_pedido) }}"
+                                    onsubmit="return confirm('¿Cancelar esta cotización? Ya no podrá asignarse a un viaje.');">
+                                    <button class="btn-tabla btn-tabla-danger" type="submit">Cancelar</button>
+                                </form>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="tabla-vacia">Aún no tienes pedidos registrados.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+    <script defer src="{{ url_for('static', filename='js/session-timeout.js') }}"></script>
+</body>
+</html>

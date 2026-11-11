@@ -12,6 +12,8 @@ class Usuario(db.Model):
     usuario = db.Column(db.String(50), nullable=False, unique=True)
     contrasena = db.Column(db.String(255), nullable=False)
     rol = db.Column(db.String(20), default='usuario') # Ej. 'Administrador', 'Editor', 'Consultor'
+    id_cliente = db.Column(db.Integer, db.ForeignKey("clientes.id_cliente"), nullable=True)
+    cliente = db.relationship("Cliente")
     estado = db.Column(db.String(20), default="ACTIVO")
     fecha_registro = db.Column(db.DateTime, server_default=db.func.current_timestamp())
 
@@ -88,6 +90,8 @@ class Pedido(db.Model):
     tarifa = db.Column(db.Numeric(10, 2))
     fecha_estimada = db.Column(db.DateTime)
     estado = db.Column(db.String(30), default="REGISTRADO")
+    cliente = db.relationship("Cliente")
+    tipo_servicio = db.relationship("TipoServicio")
 
 
 class Asignacion(db.Model):

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Crear nuevo usuario{% endblock %}
+{% block heading %}Crear nuevo usuario{% endblock %}
+{% block subtitle %}
+<p>Registra una cuenta con permisos de Usuario o Consultor.</p>
+{% endblock %}
+
+{% block content %}
+<section class="formulario-contenedor">
+    <form method="POST" action="{{ url_for('crear_usuario_admin') }}">
+        <div class="form-grid">
+            <div class="campo-form">
+                <label for="nombre_usuario">Nombre de usuario</label>
+                <input
+                    class="form-control"
+                    id="nombre_usuario"
+                    name="nombre_usuario"
+                    type="text"
+                    maxlength="50"
+                    autocomplete="username"
+                    value="{{ nombre_usuario }}"
+                    required
+                >
+            </div>
+            <div class="campo-form">
+                <label for="password">Contraseña</label>
+                <input
+                    class="form-control"
+                    id="password"
+                    name="password"
+                    type="password"
+                    autocomplete="new-password"
+                    required
+                >
+            </div>
+            <div class="campo-form">
+                <label for="rol">Rol</label>
+                <select class="form-select" id="rol" name="rol" required>
+                    <option value="" {% if not rol_seleccionado %}selected{% endif %} disabled>Selecciona un rol</option>
+                    <option value="Usuario" {% if rol_seleccionado == 'Usuario' %}selected{% endif %}>Usuario</option>
+                    <option value="Consultor" {% if rol_seleccionado == 'Consultor' %}selected{% endif %}>Consultor</option>
+                </select>
+            </div>
+        </div>
+        <button class="boton-amarillo" type="submit">Crear cuenta</button>
+    </form>
+</section>
+{% endblock %}

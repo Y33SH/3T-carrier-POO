@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3T Carrier | Vincular consultores</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+</head>
+<body class="dashboard-body">
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <img src="{{ url_for('static', filename='css/IMG/logo-3t.png') }}" alt="Logo 3T Carrier">
+        </div>
+        <nav class="sidebar-menu">
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            {% if session.get('rol') == 'Administrador' %}
+            <a href="{{ url_for('clientes') }}">Clientes</a>
+            {% endif %}
+            {% if session.get('rol') in ['Administrador', 'Editor'] %}
+            <a href="{{ url_for('pedidos') }}">Pedidos</a>
+            {% endif %}
+            {% if session.get('rol') == 'Administrador' %}
+            <a href="{{ url_for('operadores') }}">Operadores</a>
+            <a href="{{ url_for('unidades') }}">Unidades</a>
+            {% endif %}
+            {% if session.get('rol') in ['Administrador', 'Editor'] %}
+            <a href="{{ url_for('asignaciones') }}">Asignaciones</a>
+            {% endif %}
+            <a href="{{ url_for('seguimiento') }}">Seguimiento</a>
+            {% if session.get('rol') in ['Administrador', 'Editor'] %}
+            <a href="{{ url_for('incidencias') }}">Incidencias</a>
+            {% endif %}
+            {% if session.get('rol') == 'Administrador' %}
+            <a href="{{ url_for('reportes') }}">Reportes</a>
+            <a href="{{ url_for('administrar_consultores') }}" class="activo">Vincular consultores</a>
+            <a href="{{ url_for('crear_usuario_admin') }}">Crear Nuevo Usuario</a>
+            {% endif %}
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('logout') }}">Cerrar sesión</a>
+        </div>
+    </aside>
+
+    <main class="dashboard-contenido">
+        <header class="dashboard-header">
+            <div>
+                <h1>Vincular consultores con clientes</h1>
+                <p>Asigna una cuenta con rol Usuario o Consultor a un cliente. Al guardar, la cuenta quedará como Consultor.</p>
+            </div>
+        </header>
+
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+            {% if mensajes %}
+                <div role="status" aria-live="polite">
+                    {% for categoria, mensaje in mensajes %}
+                        <p class="mensaje-{{ categoria }}">{{ mensaje }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <section class="tabla-contenedor">
+            <div class="tabla-responsive">
+                <table class="tabla-clientes">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Cliente vinculado</th>
+                            <th>Actualizar vinculación</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for consultor in consultores %}
+                        <tr>
+                            <td>{{ consultor.nombre or consultor.usuario }}</td>
+                            <td>{{ consultor.cliente.razon_social if consultor.cliente else 'Sin vincular' }}</td>
+                            <td>
+                                <form method="POST" action="{{ url_for('administrar_consultores') }}">
+                                    <input type="hidden" name="id_usuario" value="{{ consultor.id_usuario }}">
+                                    <select name="id_cliente" aria-label="Cliente para {{ consultor.usuario }}" required>
+                                        <option value="">Seleccionar cliente</option>
+                                        {% for cliente in clientes_por_consultor[consultor.id_usuario] %}
+                                        <option value="{{ cliente.id_cliente }}"
+                                            {% if consultor.id_cliente == cliente.id_cliente %}selected{% endif %}>
+                                            {{ cliente.razon_social }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <button class="btn-tabla" type="submit">Guardar</button>
+                                </form>
+                            </td>
+                            <td>
+                                <form method="POST" action="{{ url_for('eliminar_usuario_admin', id_usuario=consultor.id_usuario) }}"
+                                    onsubmit="return confirm('¿Eliminar esta cuenta de usuario? Esta acción no se puede deshacer.');">
+                                    <button class="btn-tabla btn-tabla-danger" type="submit">Eliminar</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="tabla-vacia">No hay cuentas con rol Usuario o Consultor.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+    <script defer src="{{ url_for('static', filename='js/session-timeout.js') }}"></script>
+</body>
+</html>

@@ -12,15 +12,29 @@
             <img src="{{ url_for('static', filename='css/IMG/logo-3t.png') }}" alt="Logo 3T Carrier">
         </div>
         <nav class="sidebar-menu">
-            <a href="{{ url_for('dashboard') }}">Menu</a>
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            {% if session.get('rol') == 'Administrador' %}
             <a href="{{ url_for('clientes') }}">Clientes</a>
+            {% endif %}
+            {% if session.get('rol') in ['Administrador', 'Editor'] %}
             <a href="{{ url_for('pedidos') }}">Pedidos</a>
+            {% endif %}
+            {% if session.get('rol') == 'Administrador' %}
             <a href="{{ url_for('operadores') }}">Operadores</a>
             <a href="{{ url_for('unidades') }}">Unidades</a>
+            {% endif %}
+            {% if session.get('rol') in ['Administrador', 'Editor'] %}
             <a href="{{ url_for('asignaciones') }}">Asignaciones</a>
+            {% endif %}
             <a href="{{ url_for('seguimiento') }}">Seguimiento</a>
+            {% if session.get('rol') in ['Administrador', 'Editor'] %}
             <a href="{{ url_for('incidencias') }}">Incidencias</a>
+            {% endif %}
+            {% if session.get('rol') == 'Administrador' %}
             <a href="{{ url_for('reportes') }}" class="activo">Reportes</a>
+            <a href="{{ url_for('administrar_consultores') }}">Vincular consultores</a>
+            <a href="{{ url_for('crear_usuario_admin') }}">Crear Nuevo Usuario</a>
+            {% endif %}
         </nav>
         <div class="sidebar-footer">
             <a href="{{ url_for('logout') }}">Cerrar sesión</a>

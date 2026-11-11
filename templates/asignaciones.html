@@ -22,16 +22,28 @@
         </div>
 
         <nav class="sidebar-menu">
-            <a href="/dashboard"> Menu</a>
+            <a href="/dashboard">Dashboard</a>
+            {% if session.get('rol') == 'Administrador' %}
             <a href="/clientes"> Clientes</a>
+            {% endif %}
+            {% if session.get('rol') in ['Administrador', 'Editor'] %}
             <a href="/pedidos"> Pedidos</a>
+            {% endif %}
+            {% if session.get('rol') == 'Administrador' %}
             <a href="/operadores"> Operadores</a>
             <a href="/unidades"> Unidades</a>
+            {% endif %}
+            {% if session.get('rol') in ['Administrador', 'Editor'] %}
             <a href="/asignaciones" class="activo"> Asignaciones</a>
+            {% endif %}
             <a href="/seguimiento"> Seguimiento</a>
+            {% if session.get('rol') in ['Administrador', 'Editor'] %}
             <a href="/incidencias"> Incidencias</a>
+            {% endif %}
             {% if session.get('rol') == 'Administrador' %}
             <a href="{{ url_for('reportes') }}">Reportes</a>
+            <a href="{{ url_for('administrar_consultores') }}">Vincular consultores</a>
+            <a href="{{ url_for('crear_usuario_admin') }}">Crear Nuevo Usuario</a>
             {% endif %}
         </nav>
 
@@ -155,6 +167,7 @@
                                     Ver
                                 </button>
                                 {% if session.get('rol') in ['Administrador', 'Editor'] %}
+                                <a class="btn-tabla" href="{{ url_for('descargar_carta_porte', id_asignacion=asignacion.id_asignacion) }}">Descargar carta porte PDF</a>
                                 <a class="btn-tabla btn-tabla-warning" href="{{ url_for('editar_asignacion', id=asignacion.id_asignacion) }}">Editar</a>
                                 <form method="POST" action="{{ url_for('eliminar_asignacion', id=asignacion.id_asignacion) }}" style="display: inline;">
                                     <button type="submit" class="btn-tabla btn-tabla-danger" onclick="return confirm('¿Estás seguro de eliminar este registro?');">

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3T Carrier | {% block title %}Panel{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body class="dashboard-body">
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <img src="{{ url_for('static', filename='css/IMG/logo-3t.png') }}" alt="Logo 3T Carrier">
+        </div>
+        <nav class="sidebar-menu">
+            <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            {% if session.get('rol') == 'Administrador' %}
+            <a href="{{ url_for('clientes') }}">Clientes</a>
+            {% endif %}
+            {% if session.get('rol') in ['Administrador', 'Editor'] %}
+            <a href="{{ url_for('pedidos') }}">Pedidos</a>
+            {% endif %}
+            {% if session.get('rol') == 'Administrador' %}
+            <a href="{{ url_for('operadores') }}">Operadores</a>
+            <a href="{{ url_for('unidades') }}">Unidades</a>
+            {% endif %}
+            {% if session.get('rol') in ['Administrador', 'Editor'] %}
+            <a href="{{ url_for('asignaciones') }}">Asignaciones</a>
+            {% endif %}
+            <a href="{{ url_for('seguimiento') }}">Seguimiento</a>
+            {% if session.get('rol') in ['Administrador', 'Editor'] %}
+            <a href="{{ url_for('incidencias') }}">Incidencias</a>
+            {% endif %}
+            {% if session.get('rol') == 'Administrador' %}
+            <a href="{{ url_for('reportes') }}">Reportes</a>
+            <a href="{{ url_for('administrar_consultores') }}">Vincular consultores</a>
+            <a href="{{ url_for('crear_usuario_admin') }}" class="activo">Crear Nuevo Usuario</a>
+            {% endif %}
+            {% if session.get('rol') == 'Consultor' %}
+            <a href="{{ url_for('mis_pedidos') }}">Mis pedidos</a>
+            <a href="{{ url_for('solicitar_cotizacion') }}">Solicitar cotización</a>
+            {% endif %}
+        </nav>
+        <div class="sidebar-footer">
+            <a href="{{ url_for('logout') }}">Cerrar sesión</a>
+        </div>
+    </aside>
+
+    <main class="dashboard-contenido">
+        <header class="dashboard-header">
+            <div>
+                <h1>{% block heading %}{% endblock %}</h1>
+                {% block subtitle %}{% endblock %}
+            </div>
+        </header>
+        {% with mensajes = get_flashed_messages(with_categories=true) %}
+            {% if mensajes %}
+                <div role="status" aria-live="polite">
+                    {% for categoria, mensaje in mensajes %}
+                        <p class="mensaje-{{ categoria }}">{{ mensaje }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
+    <script defer src="{{ url_for('static', filename='js/session-timeout.js') }}"></script>
+</body>
+</html>

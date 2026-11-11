@@ -28,17 +28,22 @@
         <nav class="sidebar-menu">
 
             <a href="/dashboard">
-                 Menu
+                 Dashboard
             </a>
 
+            {% if session.get('rol') == 'Administrador' %}
             <a href="/clientes" class="activo">
                  Clientes
             </a>
+            {% endif %}
 
+            {% if session.get('rol') in ['Administrador', 'Editor'] %}
             <a href="/pedidos">
                  Pedidos
             </a>
+            {% endif %}
 
+            {% if session.get('rol') == 'Administrador' %}
             <a href="/operadores">
                  Operadores
             </a>
@@ -46,20 +51,25 @@
             <a href="/unidades">
                  Unidades
             </a>
+            {% endif %}
 
+            {% if session.get('rol') in ['Administrador', 'Editor'] %}
             <a href="/asignaciones">
                  Asignaciones
             </a>
+            {% endif %}
 
-            <a href="/seguimiento">
-                 Seguimiento
-            </a>
+            <a href="/seguimiento">Seguimiento</a>
 
+            {% if session.get('rol') in ['Administrador', 'Editor'] %}
             <a href="/incidencias">
                  Incidencias
             </a>
+            {% endif %}
             {% if session.get('rol') == 'Administrador' %}
             <a href="{{ url_for('reportes') }}">Reportes</a>
+            <a href="{{ url_for('administrar_consultores') }}">Vincular consultores</a>
+            <a href="{{ url_for('crear_usuario_admin') }}">Crear Nuevo Usuario</a>
             {% endif %}
 
         </nav>
