@@ -6,7 +6,6 @@ from functools import wraps
 from io import BytesIO
 from uuid import UUID, uuid4
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from werkzeug.security import check_password_hash, generate_password_hash
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import landscape, letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
@@ -37,6 +36,8 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 
 db.init_app(app)
 migrate = Migrate(app, db)
+
+ESTADOS_PEDIDO_NO_DISPONIBLES = ("CANCELADO POR CLIENTE", "ELIMINADO")
 
 @app.before_request
 def validar_expiracion_sesion():
@@ -142,7 +143,7 @@ def login():
                 "Por favor, revisa que esté bien escrito.",
                 "error",
             )
-        elif not check_password_hash(user.contrasena, password_input):
+        elif not user.verificar_password(password_input):
             flash(
                 "Parece que la contraseña es incorrecta,  inténtalo de nuevo.",
                 "error",
@@ -532,7 +533,7 @@ def mis_pedidos():
         Pedido.query
         .filter(
             Pedido.id_cliente == consultor.id_cliente,
-            Pedido.estado != "CANCELADO POR CLIENTE",
+            Pedido.estado.notin_(ESTADOS_PEDIDO_NO_DISPONIBLES),
         )
         .order_by(Pedido.id_pedido.desc())
         .all()
@@ -549,7 +550,7 @@ def cancelar_cotizacion(id_pedido):
     pedido = Pedido.query.filter_by(
         id_pedido=id_pedido,
         id_cliente=consultor.id_cliente,
-    ).first_or_404()
+    ).filter(Pedido.estado != "ELIMINADO").first_or_404()
     if pedido.estado != "Pendiente de Aprobar" or not pedido.folio.startswith("COT-"):
         flash("Solo puedes cancelar cotizaciones que aún están pendientes de aprobación.", "warning")
         return redirect(url_for("mis_pedidos"))
@@ -769,7 +770,7 @@ def crear_usuario_admin():
             usuario = Usuario(
                 nombre=nombre_usuario,
                 usuario=nombre_usuario,
-                contrasena=generate_password_hash(password),
+                password=password,
                 rol=rol,
             )
             try:
@@ -943,7 +944,7 @@ def eliminar_cliente(id_cliente):
 @roles_requeridos("Administrador", "Editor")
 def pedidos():
     lista_pedidos = Pedido.query.filter(
-        Pedido.estado != "CANCELADO POR CLIENTE"
+        Pedido.estado.notin_(ESTADOS_PEDIDO_NO_DISPONIBLES)
     ).all()
     return render_template("pedidos.html", pedidos=lista_pedidos)
 
@@ -974,6 +975,10 @@ def nuevo_pedido():
             return redirect(url_for("nuevo_pedido"))
 
         tarifa_form = request.form.get("tarifa", "").strip()
+        estado = request.form.get("estado") or "REGISTRADO"
+        if estado == "ELIMINADO":
+            flash("El estado seleccionado no es válido.", "warning")
+            return redirect(url_for("nuevo_pedido"))
         try:
             tarifa = Decimal(tarifa_form) if tarifa_form else None
             fecha_form = request.form.get("fecha_estimada", "").strip()
@@ -991,7 +996,7 @@ def nuevo_pedido():
             mercancia=request.form.get("mercancia") or None,
             tarifa=tarifa,
             fecha_estimada=fecha_estimada,
-            estado=request.form.get("estado") or "REGISTRADO",
+            estado=estado,
         )
         try:
             db.session.add(pedido)
@@ -1022,21 +1027,50 @@ def nuevo_pedido():
 @roles_requeridos('Administrador', 'Editor')
 def eliminar_pedido(id_pedido):
     pedido = Pedido.query.get_or_404(id_pedido)
+    asignaciones = Asignacion.query.filter_by(id_pedido=id_pedido).all()
+    tiene_registros_relacionados = bool(asignaciones) or any(
+        consulta.filter_by(id_pedido=id_pedido).first() is not None
+        for consulta in (Seguimiento.query, Incidencia.query)
+    )
 
     try:
-        db.session.delete(pedido)
+        tiene_asignacion_activa = any(
+            asignacion.estado in ("ASIGNADA", "EN CURSO")
+            for asignacion in asignaciones
+        )
+        tiene_estado_activo = pedido.estado in ("ASIGNADO", "EN TRANSITO")
+        if tiene_asignacion_activa or tiene_estado_activo:
+            flash(
+                "No se puede retirar este pedido porque tiene un viaje activo. Cancela o finaliza la asignación primero.",
+                "warning",
+            )
+            return redirect(url_for("pedidos"))
+
+        if tiene_registros_relacionados:
+            pedido.estado = "ELIMINADO"
+        else:
+            db.session.delete(pedido)
         db.session.commit()
-        flash("El pedido ha sido cancelado y eliminado del sistema.", "info")
+        if tiene_registros_relacionados:
+            flash(
+                "El pedido se retiró de los registros activos; se conservó como historial porque tiene movimientos relacionados.",
+                "info",
+            )
+        else:
+            flash("El pedido se eliminó correctamente.", "success")
     except SQLAlchemyError:
         db.session.rollback()
-        flash("No pudimos eliminar el pedido porque todavía está relacionado con otros registros.", "error")
+        flash("No pudimos eliminar el pedido. Inténtalo nuevamente.", "error")
 
     return redirect(url_for("pedidos"))
 
 @app.route("/editar_pedido/<int:id_pedido>", methods=["GET", "POST"])
 @roles_requeridos('Administrador', 'Editor')
 def editar_pedido(id_pedido):
-    pedido = Pedido.query.get_or_404(id_pedido)
+    pedido = Pedido.query.filter(
+        Pedido.id_pedido == id_pedido,
+        Pedido.estado != "ELIMINADO",
+    ).first_or_404()
     clientes = clientes_sin_duplicados(
         Cliente.query.order_by(
             db.func.lower(db.func.trim(Cliente.razon_social)),
@@ -1124,6 +1158,17 @@ def editar_pedido(id_pedido):
                 datos_pedido=request.form,
             )
 
+        estado = request.form.get("estado") or "REGISTRADO"
+        if estado == "ELIMINADO":
+            flash("El estado seleccionado no es válido.", "warning")
+            return render_template(
+                "nuevo_pedido.html",
+                pedido=pedido,
+                clientes=clientes,
+                servicios=servicios,
+                datos_pedido=request.form,
+            )
+
         pedido.id_cliente = id_cliente
         pedido.id_tipo_servicio = id_tipo_servicio
         pedido.folio = folio
@@ -1132,7 +1177,7 @@ def editar_pedido(id_pedido):
         pedido.mercancia = request.form.get("mercancia") or None
         pedido.tarifa = tarifa
         pedido.fecha_estimada = fecha_estimada
-        pedido.estado = request.form.get("estado") or "REGISTRADO"
+        pedido.estado = estado
 
         try:
             db.session.commit()
@@ -1417,7 +1462,7 @@ def asignaciones():
 @roles_requeridos('Administrador', 'Editor')
 def nueva_asignacion():
     pedidos = Pedido.query.filter(
-        Pedido.estado != "CANCELADO POR CLIENTE"
+        Pedido.estado.notin_(ESTADOS_PEDIDO_NO_DISPONIBLES)
     ).order_by(Pedido.folio).all()
     operadores = Operador.query.filter_by(disponibilidad=True).order_by(Operador.nombre).all()
     unidades = Unidad.query.filter(
@@ -1448,7 +1493,7 @@ def nueva_asignacion():
             id_unidad = int(id_unidad_form)
             pedido_valido = Pedido.query.filter(
                 Pedido.id_pedido == id_pedido,
-                Pedido.estado != "CANCELADO POR CLIENTE",
+                Pedido.estado.notin_(ESTADOS_PEDIDO_NO_DISPONIBLES),
             ).first()
             operador_valido = Operador.query.filter_by(
                 id_operador=id_operador,
@@ -1509,7 +1554,13 @@ def nueva_asignacion():
 def editar_asignacion(id):
     asignacion = Asignacion.query.get_or_404(id)
     pedidos = Pedido.query.filter(
-        Pedido.estado != "CANCELADO POR CLIENTE"
+        db.or_(
+            Pedido.estado.notin_(ESTADOS_PEDIDO_NO_DISPONIBLES),
+            db.and_(
+                Pedido.id_pedido == asignacion.id_pedido,
+                Pedido.estado == "ELIMINADO",
+            ),
+        )
     ).order_by(Pedido.folio).all()
     operadores = Operador.query.filter(
         (Operador.disponibilidad.is_(True)) | (Operador.id_operador == asignacion.id_operador)
@@ -1524,7 +1575,13 @@ def editar_asignacion(id):
             id_pedido = int(request.form.get("id_pedido", ""))
             pedido_valido = Pedido.query.filter(
                 Pedido.id_pedido == id_pedido,
-                Pedido.estado != "CANCELADO POR CLIENTE",
+                db.or_(
+                    Pedido.estado.notin_(ESTADOS_PEDIDO_NO_DISPONIBLES),
+                    db.and_(
+                        Pedido.id_pedido == asignacion.id_pedido,
+                        Pedido.estado == "ELIMINADO",
+                    ),
+                ),
             ).first()
             if pedido_valido is None:
                 db.session.rollback()
@@ -1582,7 +1639,13 @@ def seguimiento():
     if session.get("rol") == "Consultor" and consultor is None:
         return redirect(url_for("dashboard"))
 
-    pedidos_consultor = Pedido.query.filter_by(id_cliente=consultor.id_cliente) if consultor else None
+    pedidos_consultor = (
+        Pedido.query
+        .filter_by(id_cliente=consultor.id_cliente)
+        .filter(Pedido.estado != "ELIMINADO")
+        if consultor
+        else None
+    )
     lista_seguimientos = (
         Seguimiento.query.filter(Seguimiento.id_pedido.in_(pedidos_consultor.with_entities(Pedido.id_pedido)))
         .all()
@@ -1662,7 +1725,7 @@ def incidencias():
 @roles_requeridos('Administrador', 'Editor')
 def nueva_incidencia():
     pedidos = Pedido.query.filter(
-        Pedido.estado != "CANCELADO POR CLIENTE"
+        Pedido.estado.notin_(ESTADOS_PEDIDO_NO_DISPONIBLES)
     ).order_by(Pedido.folio).all()
     if request.method == "POST":
         id_pedido_form = (request.form.get("id_pedido") or "").strip()
@@ -1687,7 +1750,7 @@ def nueva_incidencia():
             id_pedido = int(id_pedido_form)
             pedido = Pedido.query.filter(
                 Pedido.id_pedido == id_pedido,
-                Pedido.estado != "CANCELADO POR CLIENTE",
+                Pedido.estado.notin_(ESTADOS_PEDIDO_NO_DISPONIBLES),
             ).first()
             if pedido is None:
                 flash("El pedido seleccionado ya no está disponible. Elige otro de la lista.", "warning")
@@ -1721,7 +1784,13 @@ def nueva_incidencia():
 def editar_incidencia(id):
     incidencia = Incidencia.query.get_or_404(id)
     pedidos = Pedido.query.filter(
-        Pedido.estado != "CANCELADO POR CLIENTE"
+        db.or_(
+            Pedido.estado.notin_(ESTADOS_PEDIDO_NO_DISPONIBLES),
+            db.and_(
+                Pedido.id_pedido == incidencia.id_pedido,
+                Pedido.estado == "ELIMINADO",
+            ),
+        )
     ).order_by(Pedido.folio).all()
 
     if request.method == "POST":
@@ -1743,13 +1812,20 @@ def editar_incidencia(id):
                 flash("Indica la fecha y hora en que ocurrió la incidencia.", "warning")
                 return render_template("nueva_incidencia.html", incidencia=incidencia, pedidos=pedidos, datos_incidencia=request.form)
 
-            incidencia.id_pedido = int(id_pedido_form)
+            id_pedido_seleccionado = int(id_pedido_form)
             if Pedido.query.filter(
-                Pedido.id_pedido == incidencia.id_pedido,
-                Pedido.estado != "CANCELADO POR CLIENTE",
+                Pedido.id_pedido == id_pedido_seleccionado,
+                db.or_(
+                    Pedido.estado.notin_(ESTADOS_PEDIDO_NO_DISPONIBLES),
+                    db.and_(
+                        Pedido.id_pedido == incidencia.id_pedido,
+                        Pedido.estado == "ELIMINADO",
+                    ),
+                ),
             ).first() is None:
                 flash("El pedido seleccionado ya no está disponible. Elige otro de la lista.", "warning")
                 return render_template("nueva_incidencia.html", incidencia=incidencia, pedidos=pedidos, datos_incidencia=request.form)
+            incidencia.id_pedido = id_pedido_seleccionado
             incidencia.tipo = tipo
             incidencia.descripcion = descripcion
             incidencia.fecha_hora = datetime.fromisoformat(fecha_form)

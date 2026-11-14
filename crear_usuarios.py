@@ -1,6 +1,5 @@
 from app import app
 from models import db, Usuario
-from werkzeug.security import generate_password_hash
 
 with app.app_context():
 
@@ -8,7 +7,7 @@ with app.app_context():
         nombre="Editor",
         usuario="2066273",
 
-        contrasena=generate_password_hash("6oTfUDE512@"),
+        password="6oTfUDE512@",
         rol="Editor"
     )
 
@@ -16,7 +15,7 @@ with app.app_context():
     usuario_normal = Usuario(
         nombre="",
         usuario="comun3!",
-        contrasena=generate_password_hash("2143@!"), 
+        password="2143@!",
         rol="Usuario"
     )
 

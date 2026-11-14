@@ -3,30 +3,52 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 db = SQLAlchemy()
 
-class Usuario(db.Model):
+
+class ModeloBase(db.Model):
+    __abstract__ = True
+
+    @property
+    def id(self):
+        primary_key = self.__mapper__.primary_key[0]
+        return getattr(self, primary_key.name)
+
+    def obtener_resumen(self):
+        return f"{type(self).__name__} #{self.id}"
+
+
+class Usuario(ModeloBase):
     __tablename__ = "usuarios"
 
     id_usuario = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100))
     apellidos = db.Column(db.String(100))
     usuario = db.Column(db.String(50), nullable=False, unique=True)
-    contrasena = db.Column(db.String(255), nullable=False)
+    _contrasena = db.Column("contrasena", db.String(255), nullable=False)
     rol = db.Column(db.String(20), default='usuario') # Ej. 'Administrador', 'Editor', 'Consultor'
     id_cliente = db.Column(db.Integer, db.ForeignKey("clientes.id_cliente"), nullable=True)
     cliente = db.relationship("Cliente")
     estado = db.Column(db.String(20), default="ACTIVO")
     fecha_registro = db.Column(db.DateTime, server_default=db.func.current_timestamp())
 
-    # Método para encriptar la contraseña antes de guardarla
+    @property
+    def password(self):
+        return self._contrasena
+
+    @password.setter
+    def password(self, password):
+        self._contrasena = generate_password_hash(password)
+
     def set_password(self, password):
-        self.contrasena = generate_password_hash(password)
+        self.password = password
 
-    # Método para verificar la contraseña en el login
     def verificar_password(self, password):
-        return check_password_hash(self.contrasena, password)
+        return check_password_hash(self._contrasena, password)
+
+    def obtener_resumen(self):
+        return f"Usuario: {self.usuario} | Rol: {self.rol or 'Sin rol'}"
 
 
-class Cliente(db.Model):
+class Cliente(ModeloBase):
     __tablename__ = "clientes"
 
     id_cliente = db.Column(db.Integer, primary_key=True)
@@ -40,7 +62,7 @@ class Cliente(db.Model):
     estado = db.Column(db.String(60))
 
 
-class TipoServicio(db.Model):
+class TipoServicio(ModeloBase):
     __tablename__ = "tipos_servicio"
 
     id_tipo_servicio = db.Column(db.Integer, primary_key=True)
@@ -51,7 +73,7 @@ class TipoServicio(db.Model):
     activo = db.Column(db.Boolean, default=True)
 
 
-class Operador(db.Model):
+class Operador(ModeloBase):
     __tablename__ = "operadores"
 
     id_operador = db.Column(db.Integer, primary_key=True)
@@ -64,7 +86,7 @@ class Operador(db.Model):
     horas_servicio = db.Column(db.Numeric(5, 2), default=0.00)
 
 
-class Unidad(db.Model):
+class Unidad(ModeloBase):
     __tablename__ = "unidades"
 
     id_unidad = db.Column(db.Integer, primary_key=True)
@@ -77,7 +99,7 @@ class Unidad(db.Model):
     estado = db.Column(db.String(30), default="DISPONIBLE")
 
 
-class Pedido(db.Model):
+class Pedido(ModeloBase):
     __tablename__ = "pedidos"
 
     id_pedido = db.Column(db.Integer, primary_key=True)
@@ -93,8 +115,13 @@ class Pedido(db.Model):
     cliente = db.relationship("Cliente")
     tipo_servicio = db.relationship("TipoServicio")
 
+    def obtener_resumen(self):
+        folio = self.folio or f"#{self.id_pedido}"
+        estado = self.estado or "Sin estado"
+        return f"Pedido {folio} | Estado: {estado}"
 
-class Asignacion(db.Model):
+
+class Asignacion(ModeloBase):
     __tablename__ = "asignaciones"
 
     id_asignacion = db.Column(db.Integer, primary_key=True)
@@ -110,7 +137,7 @@ class Asignacion(db.Model):
     estado = db.Column(db.String(30), default="ASIGNADA")
 
 
-class Seguimiento(db.Model):
+class Seguimiento(ModeloBase):
     __tablename__ = "seguimientos"
 
     id_seguimiento = db.Column(db.Integer, primary_key=True)
@@ -122,7 +149,7 @@ class Seguimiento(db.Model):
     observaciones = db.Column(db.String(255))
 
 
-class Incidencia(db.Model):
+class Incidencia(ModeloBase):
     __tablename__ = "incidencias"
 
     id_incidencia = db.Column(db.Integer, primary_key=True)
@@ -132,3 +159,9 @@ class Incidencia(db.Model):
     fecha_hora = db.Column(db.DateTime, server_default=db.func.current_timestamp())
     estado = db.Column(db.String(30), default="ABIERTA")
     solucion = db.Column(db.String(255))
+
+    def obtener_resumen(self):
+        return (
+            f"Incidencia #{self.id_incidencia} | {self.tipo} | "
+            f"Estado: {self.estado or 'Sin estado'}"
+        )
