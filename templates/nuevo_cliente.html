@@ -1,3 +1,4 @@
+{% import 'macros/ubicacion.html' as ubicacion %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -95,7 +96,14 @@
                             type="text"
                             id="rfc"
                             name="rfc"
+                            minlength="12"
                             maxlength="13"
+                            pattern="[A-Z0-9]{12,13}"
+                            title="El RFC debe tener 12 (persona moral) o 13 (persona física) caracteres, solo letras mayúsculas y números, sin espacios ni guiones."
+                            placeholder="Ej. TNO850101AB1"
+                            autocomplete="off"
+                            style="text-transform: uppercase;"
+                            oninput="this.value = this.value.toUpperCase();"
                         >
                     </div>
 
@@ -106,6 +114,10 @@
                             id="razon_social"
                             name="razon_social"
                             placeholder="Ej. Transportes del Norte"
+                            minlength="3"
+                            maxlength="150"
+                            pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+"
+                            title="Solo se permiten letras y espacios (mínimo 3 caracteres)."
                             required
                         >
                     </div>
@@ -116,7 +128,11 @@
                             type="text"
                             id="nombre_contacto"
                             name="nombre_contacto"
-                            placeholder=""
+                            placeholder="Ej. Juan Pérez"
+                            minlength="3"
+                            maxlength="100"
+                            pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+"
+                            title="Solo se permiten letras y espacios (mínimo 3 caracteres)."
                             required
                         >
                     </div>
@@ -127,7 +143,11 @@
                             type="text"
                             id="telefono"
                             name="telefono"
-                            placeholder=""
+                            inputmode="numeric"
+                            maxlength="10"
+                            pattern="[0-9]{10}"
+                            title="El teléfono debe tener exactamente 10 dígitos."
+                            placeholder="10 dígitos"
                         >
                     </div>
 
@@ -137,6 +157,8 @@
                             type="email"
                             id="correo"
                             name="correo"
+                            maxlength="120"
+                            title="Escribe un correo válido, por ejemplo: contacto@empresa.com"
                             placeholder="correo@empresa.com"
                         >
                     </div>
@@ -147,28 +169,20 @@
                             type="text"
                             id="direccion"
                             name="direccion"
+                            maxlength="255"
                             placeholder="Calle, número, colonia"
                         >
                     </div>
 
                     <div class="campo-form">
                         <label for="pais">País</label>
-                        <input
-                            type="text"
-                            id="pais"
-                            name="pais"
-                            placeholder=""
-                        >
+                        {{ ubicacion.select_pais('pais', 'México') }}
                     </div>
 
                     <div class="campo-form">
                         <label for="estado">Estado</label>
-                        <input
-                            type="text"
-                            id="estado"
-                            name="estado"
-                            placeholder=""
-                        >
+                        {{ ubicacion.input_estado('estado') }}
+                        {{ ubicacion.datalist_estados() }}
                     </div>
 
                 </div>

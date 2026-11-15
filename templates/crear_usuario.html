@@ -3,7 +3,7 @@
 {% block title %}Crear nuevo usuario{% endblock %}
 {% block heading %}Crear nuevo usuario{% endblock %}
 {% block subtitle %}
-<p>Registra una cuenta con permisos de Usuario o Consultor.</p>
+<p>Registra una cuenta con permisos de Usuario, Consultor o Editor.</p>
 {% endblock %}
 
 {% block content %}
@@ -40,6 +40,7 @@
                     <option value="" {% if not rol_seleccionado %}selected{% endif %} disabled>Selecciona un rol</option>
                     <option value="Usuario" {% if rol_seleccionado == 'Usuario' %}selected{% endif %}>Usuario</option>
                     <option value="Consultor" {% if rol_seleccionado == 'Consultor' %}selected{% endif %}>Consultor</option>
+                    <option value="Editor" {% if rol_seleccionado == 'Editor' %}selected{% endif %}>Editor</option>
                 </select>
             </div>
         </div>

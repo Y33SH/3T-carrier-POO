@@ -229,11 +229,11 @@
                                         <div class="form-grid">
                                             <div class="campo-form">
                                                 <label for="numero_economico_{{ unidad.id_unidad }}">Número económico</label>
-                                                <input id="numero_economico_{{ unidad.id_unidad }}" name="numero_economico" value="{{ unidad.numero_economico }}" required>
+                                                <input id="numero_economico_{{ unidad.id_unidad }}" name="numero_economico" type="text" minlength="5" maxlength="30" pattern="[a-zA-Z0-9\-]+" title="Solo letras, números y guiones, mínimo 5 caracteres (ej. 3T-001)." value="{{ unidad.numero_economico }}" required>
                                             </div>
                                             <div class="campo-form">
                                                 <label for="placas_{{ unidad.id_unidad }}">Placas</label>
-                                                <input id="placas_{{ unidad.id_unidad }}" name="placas" value="{{ unidad.placas }}" required>
+                                                <input id="placas_{{ unidad.id_unidad }}" name="placas" type="text" minlength="5" maxlength="20" pattern="[a-zA-Z0-9\-]+" title="Solo letras, números y guiones, mínimo 5 caracteres (ej. ABC-123-A)." value="{{ unidad.placas }}" required>
                                             </div>
                                             <div class="campo-form">
                                                 <label for="marca_{{ unidad.id_unidad }}">Marca</label>

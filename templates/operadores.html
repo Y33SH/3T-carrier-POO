@@ -225,11 +225,11 @@
                                         <div class="form-grid">
                                             <div class="campo-form">
                                                 <label for="nombre_operador_{{ operador.id_operador }}">Nombre</label>
-                                                <input id="nombre_operador_{{ operador.id_operador }}" name="nombre" value="{{ operador.nombre }}" maxlength="120" required>
+                                                <input id="nombre_operador_{{ operador.id_operador }}" name="nombre" type="text" minlength="3" maxlength="120" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+" title="Solo se permiten letras y espacios (mínimo 3 caracteres)." value="{{ operador.nombre }}" required>
                                             </div>
                                             <div class="campo-form">
                                                 <label for="telefono_operador_{{ operador.id_operador }}">Teléfono</label>
-                                                <input id="telefono_operador_{{ operador.id_operador }}" name="telefono" value="{{ operador.telefono or '' }}" maxlength="20">
+                                                <input id="telefono_operador_{{ operador.id_operador }}" name="telefono" type="text" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" title="El teléfono debe tener exactamente 10 dígitos." value="{{ operador.telefono or '' }}">
                                             </div>
                                             <div class="campo-form">
                                                 <label for="licencia_operador_{{ operador.id_operador }}">Número de licencia</label>

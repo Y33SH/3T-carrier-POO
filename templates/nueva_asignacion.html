@@ -98,7 +98,7 @@
                             Pedido
                         </label>
 
-                        <select id="id_pedido" name="id_pedido">
+                        <select id="id_pedido" name="id_pedido" required>
 
                             <option value="">
                                 Seleccionar pedido
@@ -122,7 +122,7 @@
                             Operador
                         </label>
 
-                        <select id="id_operador" name="id_operador">
+                        <select id="id_operador" name="id_operador" required>
 
                             <option value="">
                                 Seleccionar operador
@@ -146,7 +146,7 @@
                             Unidad
                         </label>
 
-                        <select id="id_unidad" name="id_unidad">
+                        <select id="id_unidad" name="id_unidad" required>
 
                             <option value="">
                                 Seleccionar unidad
@@ -177,6 +177,7 @@
                             type="datetime-local"
                             id="fecha_asignacion"
                             name="fecha_asignacion"
+                            required
                             value="{{ asignacion.fecha_asignacion.strftime('%Y-%m-%dT%H:%M') if asignacion and asignacion.fecha_asignacion else '' }}"
                         >
 

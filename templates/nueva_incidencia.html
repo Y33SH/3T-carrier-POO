@@ -104,6 +104,7 @@
                         <select
                             id="id_pedido"
                             name="id_pedido"
+                            required
                         >
 
                             <option value="">
@@ -133,6 +134,7 @@
                         <select
                             id="tipo"
                             name="tipo"
+                            required
                         >
 
                             <option value="">
@@ -179,6 +181,7 @@
                             type="datetime-local"
                             id="fecha_hora"
                             name="fecha_hora"
+                            required
                             value="{{ datos_incidencia.get('fecha_hora', '') if datos_incidencia else (incidencia.fecha_hora.strftime('%Y-%m-%dT%H:%M') if incidencia and incidencia.fecha_hora else '') }}"
                         >
 
@@ -226,6 +229,7 @@
                             name="descripcion"
                             rows="5"
                             placeholder="Describe qué ocurrió durante el servicio..."
+                            required
                         >{{ datos_incidencia.get('descripcion', '') if datos_incidencia else (incidencia.descripcion if incidencia else '') }}</textarea>
 
                     </div>

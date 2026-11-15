@@ -100,6 +100,10 @@
                             id="numero_economico"
                             name="numero_economico"
                             placeholder="Ej. 3T-001"
+                            minlength="5"
+                            maxlength="30"
+                            pattern="[a-zA-Z0-9\-]+"
+                            title="Solo letras, números y guiones, mínimo 5 caracteres (ej. 3T-001)."
                             required
                         >
                     </div>
@@ -114,6 +118,10 @@
                             id="placas"
                             name="placas"
                             placeholder="Ej. ABC-123-A"
+                            minlength="5"
+                            maxlength="20"
+                            pattern="[a-zA-Z0-9\-]+"
+                            title="Solo letras, números y guiones, mínimo 5 caracteres (ej. ABC-123-A)."
                             required
                         >
                     </div>

@@ -88,7 +88,11 @@
                             type="text"
                             id="nombre"
                             name="nombre"
+                            pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+"
+                            title="Solo se permiten letras y espacios (mínimo 3 caracteres)."
+                            placeholder="Ej. Juan Pérez López"
                             value="{{ datos_operador.get('nombre', '') if datos_operador else '' }}"
+                            minlength="3"
                             maxlength="120"
                             required
                         >
@@ -100,8 +104,12 @@
                             type="text"
                             id="telefono"
                             name="telefono"
+                            inputmode="numeric"
+                            maxlength="10"
+                            pattern="[0-9]{10}"
+                            title="El teléfono debe tener exactamente 10 dígitos."
+                            placeholder="10 dígitos"
                             value="{{ datos_operador.get('telefono', '') if datos_operador else '' }}"
-                            maxlength="20"
                         >
                     </div>
 

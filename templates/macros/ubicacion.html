@@ -1,0 +1,55 @@
+{# =====================================================================
+Catálogos de ubicación reutilizables (País / Estado)
+Uso:
+{% import 'macros/ubicacion.html' as ubicacion %}
+{{ ubicacion.select_pais('pais', valor_actual) }}
+{{ ubicacion.input_estado('estado', valor_actual) }}
+===================================================================== #}
+
+{% set PAISES = [
+'México', 'Estados Unidos', 'Canadá', 'Guatemala', 'Belice',
+'El Salvador', 'Honduras', 'Nicaragua', 'Costa Rica', 'Panamá',
+'Colombia', 'Perú', 'Chile', 'Argentina', 'Brasil'
+] %}
+
+{% set ESTADOS_MX = [
+'Aguascalientes', 'Baja California', 'Baja California Sur', 'Campeche',
+'Chiapas', 'Chihuahua', 'Ciudad de México', 'Coahuila', 'Colima',
+'Durango', 'Estado de México', 'Guanajuato', 'Guerrero', 'Hidalgo',
+'Jalisco', 'Michoacán', 'Morelos', 'Nayarit', 'Nuevo León', 'Oaxaca',
+'Puebla', 'Querétaro', 'Quintana Roo', 'San Luis Potosí', 'Sinaloa',
+'Sonora', 'Tabasco', 'Tamaulipas', 'Tlaxcala', 'Veracruz', 'Yucatán',
+'Zacatecas'
+] %}
+
+{# País: <select> con opciones predefinidas (evita abreviaturas como "MX"). #}
+    {% macro select_pais(id, valor='') -%}
+    <select id="{{ id }}" name="pais" title="Selecciona un país de la lista.">
+        <option value="" {% if not valor %}selected{% endif %}>Selecciona un país</option>
+        {% for pais in PAISES %}
+        <option value="{{ pais }}" {% if valor==pais %}selected{% endif %}>{{ pais }}</option>
+        {% endfor %}
+        {% if valor and valor not in PAISES %}
+        {# Conserva valores antiguos que no están en el catálogo para no borrarlos al editar. #}
+        <option value="{{ valor }}" selected>{{ valor }} (valor anterior, actualízalo)</option>
+        {% endif %}
+    </select>
+    {%- endmacro %}
+
+    {# Estado: solo letras/espacios, mínimo 4 caracteres, con sugerencias de los 32 estados.
+    Se deja como input (no select) para permitir estados/provincias de clientes extranjeros. #}
+    {% macro input_estado(id, valor='') -%}
+    <input type="text" id="{{ id }}" name="estado" list="lista_estados_mx" value="{{ valor }}" minlength="4"
+        maxlength="60" pattern="[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+"
+        title="Escribe el nombre completo del estado (solo letras y espacios, mínimo 4 caracteres). No uses abreviaturas como 'DF' o 'NL'."
+        placeholder="Ej. Nuevo León">
+    {%- endmacro %}
+
+    {# Datalist compartido: inclúyelo UNA sola vez por página. #}
+    {% macro datalist_estados() -%}
+    <datalist id="lista_estados_mx">
+        {% for estado in ESTADOS_MX %}
+        <option value="{{ estado }}"></option>
+        {% endfor %}
+    </datalist>
+    {%- endmacro %}

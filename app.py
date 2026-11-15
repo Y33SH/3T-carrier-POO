@@ -4,6 +4,7 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal, InvalidOperation
 from functools import wraps
 from io import BytesIO
+import re
 from uuid import UUID, uuid4
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from reportlab.lib import colors
@@ -118,6 +119,107 @@ def clientes_sin_duplicados(clientes, id_preferido=None):
         elif cliente.id_cliente == id_preferido:
             clientes_unicos[posicion] = cliente
     return clientes_unicos
+
+# ==========================================
+# VALIDACIONES DE ENTRADA (espejo de las reglas HTML5 de las plantillas)
+# ==========================================
+PATRON_SOLO_LETRAS = re.compile(r"[A-Za-zÁÉÍÓÚáéíóúÑñ ]+")
+PATRON_RFC = re.compile(r"[A-Z0-9]{12,13}")
+PATRON_TELEFONO = re.compile(r"[0-9]{10}")
+PATRON_CODIGO_UNIDAD = re.compile(r"[A-Za-z0-9\-]+")
+PATRON_CORREO = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
+
+
+def normalizar_texto(valor):
+    """Quita espacios al inicio/fin y colapsa espacios repetidos. Devuelve '' si no hay texto."""
+    return " ".join((valor or "").split())
+
+
+def validar_solo_letras(valor, etiqueta, minimo, maximo, obligatorio=False):
+    """Solo letras (con acentos/ñ) y espacios, con longitud mínima y máxima."""
+    if not valor:
+        return f"El campo {etiqueta} es obligatorio." if obligatorio else None
+    if not PATRON_SOLO_LETRAS.fullmatch(valor):
+        return f"El campo {etiqueta} solo puede contener letras y espacios (sin números ni símbolos)."
+    if len(valor) < minimo:
+        return f"El campo {etiqueta} debe tener al menos {minimo} caracteres."
+    if len(valor) > maximo:
+        return f"El campo {etiqueta} no puede tener más de {maximo} caracteres."
+    return None
+
+
+def validar_telefono(telefono):
+    telefono = (telefono or "").strip()
+    if not telefono:
+        return None
+    if not PATRON_TELEFONO.fullmatch(telefono):
+        return "El teléfono debe tener exactamente 10 dígitos, sin espacios ni guiones."
+    return None
+
+
+def validar_rfc(rfc):
+    if not rfc:
+        return None
+    if not PATRON_RFC.fullmatch(rfc):
+        return (
+            "El RFC debe tener 12 (persona moral) o 13 (persona física) caracteres, "
+            "solo letras mayúsculas y números, sin espacios ni guiones."
+        )
+    return None
+
+
+def validar_codigo_unidad(valor, etiqueta, maximo, minimo=5):
+    """Placas / número económico: letras, números y guiones, mínimo 5 caracteres."""
+    if not valor:
+        return f"El campo {etiqueta} es obligatorio."
+    if not PATRON_CODIGO_UNIDAD.fullmatch(valor):
+        return f"El campo {etiqueta} solo puede contener letras, números y guiones."
+    if len(valor) < minimo:
+        return f"El campo {etiqueta} debe tener al menos {minimo} caracteres."
+    if len(valor) > maximo:
+        return f"El campo {etiqueta} no puede tener más de {maximo} caracteres."
+    return None
+
+
+def validar_datos_cliente(formulario):
+    """Limpia y valida los datos del formulario de cliente. Devuelve (datos, error)."""
+    datos = {
+        "razon_social": normalizar_texto(formulario.get("razon_social")),
+        "rfc": (formulario.get("rfc") or "").strip().upper(),
+        "nombre_contacto": normalizar_texto(formulario.get("nombre_contacto")),
+        "telefono": (formulario.get("telefono") or "").strip(),
+        "correo": (formulario.get("correo") or "").strip(),
+        "direccion": normalizar_texto(formulario.get("direccion")),
+        "pais": normalizar_texto(formulario.get("pais")),
+        "estado": normalizar_texto(formulario.get("estado")),
+    }
+
+    validaciones = (
+        validar_solo_letras(datos["razon_social"], "Razón social", 3, 150, obligatorio=True),
+        validar_rfc(datos["rfc"]),
+        validar_solo_letras(datos["nombre_contacto"], "Nombre de contacto", 3, 100, obligatorio=True),
+        validar_telefono(datos["telefono"]),
+        (
+            "Escribe un correo válido, por ejemplo nombre@empresa.com."
+            if datos["correo"] and (len(datos["correo"]) > 120 or not PATRON_CORREO.fullmatch(datos["correo"]))
+            else None
+        ),
+        (
+            "La dirección no puede tener más de 255 caracteres."
+            if len(datos["direccion"]) > 255
+            else None
+        ),
+        validar_solo_letras(datos["pais"], "País", 4, 60),
+        validar_solo_letras(datos["estado"], "Estado", 4, 60),
+    )
+    for error in validaciones:
+        if error:
+            return None, error
+
+    # Los campos opcionales vacíos se guardan como NULL.
+    for campo in ("rfc", "telefono", "correo", "direccion", "pais", "estado"):
+        datos[campo] = datos[campo] or None
+    return datos, None
 
 # ==========================================
 # RUTAS DE AUTENTICACIÓN
@@ -758,8 +860,8 @@ def crear_usuario_admin():
         password = request.form.get("password") or ""
         rol = request.form.get("rol") or ""
 
-        if rol not in ("Usuario", "Consultor"):
-            flash("Solo se pueden crear cuentas con rol Usuario o Consultor.", "error")
+        if rol not in ("Usuario", "Consultor", "Editor"):
+            flash("Solo se pueden crear cuentas con rol Usuario, Consultor o Editor.", "error")
         elif not nombre_usuario or len(nombre_usuario) > 50:
             flash("El nombre de usuario es obligatorio y no debe exceder 50 caracteres.", "error")
         elif not password:
@@ -772,6 +874,7 @@ def crear_usuario_admin():
                 usuario=nombre_usuario,
                 password=password,
                 rol=rol,
+                id_cliente=None,
             )
             try:
                 db.session.add(usuario)
@@ -808,45 +911,16 @@ def clientes():
 @roles_requeridos('Administrador')
 def nuevo_cliente():
     if request.method == "POST":
-        datos_cliente = {
-            campo: request.form.get(campo)
-            for campo in (
-                "razon_social",
-                "rfc",
-                "nombre_contacto",
-                "telefono",
-                "correo",
-                "direccion",
-                "pais",
-                "estado",
-            )
-        }
-
-        if not datos_cliente["razon_social"] or not datos_cliente["razon_social"].strip():
-            flash("Parece que olvidaste la Razón Social. Este dato es obligatorio para registrar al cliente.", "error")
+        datos_cliente, error = validar_datos_cliente(request.form)
+        if error:
+            flash(error, "error")
             return redirect(url_for("nuevo_cliente"))
 
-        nombre_empresa = datos_cliente["razon_social"].strip()
+        nombre_empresa = datos_cliente["razon_social"]
         if Cliente.query.filter(
             db.func.lower(db.func.trim(Cliente.razon_social)) == nombre_empresa.lower()
         ).first():
             flash("Ya existe una empresa registrada con esa razón social.", "warning")
-            return redirect(url_for("nuevo_cliente"))
-            
-        if not datos_cliente["nombre_contacto"] or not datos_cliente["nombre_contacto"].strip():
-            flash("Necesitamos el Nombre de Contacto para saber con quién comunicarnos.", "error")
-            return redirect(url_for("nuevo_cliente"))
-
-        if datos_cliente["telefono"] and not datos_cliente["telefono"].isdigit():
-            flash("El número de teléfono tiene letras o espacios. Por favor, escribe solo números (ej. 8123456789).", "error")
-            return redirect(url_for("nuevo_cliente"))
-            
-        if datos_cliente["telefono"] and len(datos_cliente["telefono"]) < 10:
-             flash("El teléfono parece estar muy corto. Revisa que tenga al menos 10 números.", "error")
-             return redirect(url_for("nuevo_cliente"))
-
-        if datos_cliente["correo"] and "@" not in datos_cliente["correo"]:
-            flash("El correo electrónico está incompleto. Asegúrate de que incluya el símbolo '@'.", "error")
             return redirect(url_for("nuevo_cliente"))
 
         rfc = datos_cliente["rfc"]
@@ -879,22 +953,12 @@ def nuevo_cliente():
 @roles_requeridos('Administrador')
 def editar_cliente(id_cliente):
     cliente = Cliente.query.get_or_404(id_cliente)
-    campos = (
-        "razon_social",
-        "rfc",
-        "nombre_contacto",
-        "telefono",
-        "correo",
-        "direccion",
-        "pais",
-        "estado",
-    )
-    datos_cliente = {campo: request.form.get(campo) for campo in campos}
-
-    nombre_empresa = (datos_cliente["razon_social"] or "").strip()
-    if not nombre_empresa:
-        flash("La razón social es obligatoria.", "warning")
+    datos_cliente, error = validar_datos_cliente(request.form)
+    if error:
+        flash(error, "error")
         return redirect(url_for("clientes"))
+
+    nombre_empresa = datos_cliente["razon_social"]
     if Cliente.query.filter(
         db.func.lower(db.func.trim(Cliente.razon_social)) == nombre_empresa.lower(),
         Cliente.id_cliente != id_cliente,
@@ -1248,7 +1312,7 @@ def nuevo_operador():
     return redirect(url_for("operadores"))
 
 def validar_datos_operador(formulario):
-    nombre = (formulario.get("nombre") or "").strip()
+    nombre = normalizar_texto(formulario.get("nombre"))
     telefono = (formulario.get("telefono") or "").strip()
     numero_licencia = (formulario.get("numero_licencia") or "").strip()
     tipo_licencia = (formulario.get("tipo_licencia") or "").strip()
@@ -1256,20 +1320,16 @@ def validar_datos_operador(formulario):
     horas_form = (formulario.get("horas_servicio") or "").strip()
     disponibilidad_form = (formulario.get("disponibilidad") or "").strip().lower()
 
-    if not nombre:
-        return None, "Escribe el nombre del operador para continuar."
-    if len(nombre) > 120:
-        return None, "El nombre es demasiado largo. Usa 120 caracteres o menos."
+    error_nombre = validar_solo_letras(nombre, "Nombre", 3, 120, obligatorio=True)
+    if error_nombre:
+        return None, error_nombre
     if not numero_licencia:
         return None, "Escribe el número de licencia del operador para continuar."
     if len(numero_licencia) > 50:
         return None, "El número de licencia es demasiado largo. Revisa que esté escrito correctamente."
-    if telefono and (
-        len(telefono) > 20
-        or not any(caracter.isdigit() for caracter in telefono)
-        or not all(caracter.isdigit() or caracter in " +()-." for caracter in telefono)
-    ):
-        return None, "Revisa el teléfono: escribe números y, si hace falta, espacios, paréntesis o guiones."
+    error_telefono = validar_telefono(telefono)
+    if error_telefono:
+        return None, error_telefono
     if len(tipo_licencia) > 50:
         return None, "El tipo de licencia es demasiado largo. Usa 50 caracteres o menos."
     if disponibilidad_form not in ("true", "false", "1", "0", "si", "sí", "no"):
@@ -1361,6 +1421,13 @@ def nueva_unidad():
     if request.method == "POST":
         numero_economico = (request.form.get("numero_economico") or "").strip()
         placas = (request.form.get("placas") or "").strip()
+        error_codigo = (
+            validar_codigo_unidad(numero_economico, "Número económico", 30)
+            or validar_codigo_unidad(placas, "Placas", 20)
+        )
+        if error_codigo:
+            flash(error_codigo, "error")
+            return redirect(url_for("nueva_unidad"))
         if (
             Unidad.query.filter_by(placas=placas).first()
             or Unidad.query.filter_by(numero_economico=numero_economico).first()
@@ -1374,6 +1441,13 @@ def nueva_unidad():
         try:
             capacidad_form = (request.form.get("capacidad") or "").strip()
             capacidad = Decimal(capacidad_form) if capacidad_form else None
+            estado = (request.form.get("estado") or "DISPONIBLE").strip()
+            if estado not in ("DISPONIBLE", "EN RUTA", "MANTENIMIENTO", "FUERA DE SERVICIO"):
+                flash("Selecciona un estado válido para la unidad.", "error")
+                return redirect(url_for("nueva_unidad"))
+            if capacidad is not None and (not capacidad.is_finite() or capacidad < 0):
+                flash("La capacidad debe ser un número igual o mayor que cero.", "error")
+                return redirect(url_for("nueva_unidad"))
             unidad = Unidad(
                 numero_economico=numero_economico,
                 placas=placas,
@@ -1381,7 +1455,7 @@ def nueva_unidad():
                 modelo=request.form.get("modelo"),
                 capacidad=capacidad,
                 ubicacion_actual=request.form.get("ubicacion_actual"),
-                estado=request.form.get("estado") or "DISPONIBLE",
+                estado=estado,
             )
             db.session.add(unidad)
             db.session.commit()
@@ -1412,20 +1486,40 @@ def editar_unidad(id_unidad):
     unidad = Unidad.query.get_or_404(id_unidad)
     numero_economico = (request.form.get("numero_economico") or "").strip()
     placas = (request.form.get("placas") or "").strip()
-    if not numero_economico or not placas:
-        flash("Completa el número económico y las placas para guardar los cambios.", "error")
+    error_codigo = (
+        validar_codigo_unidad(numero_economico, "Número económico", 30)
+        or validar_codigo_unidad(placas, "Placas", 20)
+    )
+    if error_codigo:
+        flash(error_codigo, "error")
+        return redirect(url_for("unidades"))
+    if Unidad.query.filter(
+        db.or_(
+            Unidad.numero_economico == numero_economico,
+            Unidad.placas == placas,
+        ),
+        Unidad.id_unidad != id_unidad,
+    ).first():
+        flash("El número económico o las placas ya pertenecen a otra unidad. Revisa los datos.", "warning")
         return redirect(url_for("unidades"))
 
     capacidad_form = request.form.get("capacidad", "").strip()
     try:
         capacidad = Decimal(capacidad_form) if capacidad_form else None
+        if capacidad is not None and (not capacidad.is_finite() or capacidad < 0):
+            flash("La capacidad debe ser un número igual o mayor que cero.", "error")
+            return redirect(url_for("unidades"))
+        estado = (request.form.get("estado") or unidad.estado).strip()
+        if estado not in ("DISPONIBLE", "EN RUTA", "MANTENIMIENTO", "FUERA DE SERVICIO"):
+            flash("Selecciona un estado válido para la unidad.", "error")
+            return redirect(url_for("unidades"))
         unidad.numero_economico = numero_economico
         unidad.placas = placas
         unidad.marca = request.form.get("marca") or None
         unidad.modelo = request.form.get("modelo") or None
         unidad.capacidad = capacidad
         unidad.ubicacion_actual = request.form.get("ubicacion_actual") or None
-        unidad.estado = request.form.get("estado") or unidad.estado
+        unidad.estado = estado
         db.session.commit()
         flash("Los datos de la unidad se actualizaron correctamente.", "success")
     except (InvalidOperation, ValueError):
