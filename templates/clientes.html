@@ -278,7 +278,7 @@
                                             </div>
                                             <div class="campo-form">
                                                 <label for="direccion_{{ cliente.id_cliente }}">Dirección</label>
-                                                <input id="direccion_{{ cliente.id_cliente }}" name="direccion" type="text" maxlength="255" value="{{ cliente.direccion or '' }}">
+                                                <input id="direccion_{{ cliente.id_cliente }}" name="direccion" type="text" minlength="10" maxlength="255" pattern="(?=.*[a-zA-ZáéíóúÁÉÍÓÚñÑ])[a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s#,.\/'-]+" title="La dirección debe incluir el nombre de la calle/colonia, no solo números (Mínimo 10 caracteres)." value="{{ cliente.direccion or '' }}">
                                             </div>
                                             <div class="campo-form">
                                                 <label for="pais_{{ cliente.id_cliente }}">País</label>

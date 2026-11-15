@@ -1143,6 +1143,10 @@ body {
     border-radius: 7px;
 
     font-size: 14px;
+
+    color: #344054;
+    background-color: white;
+    color-scheme: light;
 }
 
 .campo-form input:focus {
@@ -1238,6 +1242,8 @@ body {
     font-size: 14px;
 
     background-color: white;
+    color: #344054;
+    color-scheme: light;
 }
 
 .campo-form select:focus,

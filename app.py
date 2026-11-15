@@ -50,8 +50,7 @@ def validar_expiracion_sesion():
     duracion_sesion = app.permanent_session_lifetime.total_seconds()
 
     if (
-        session.get('_dia_sesion') != ahora.date().isoformat()
-        or not isinstance(ultima_actividad, (int, float))
+        not isinstance(ultima_actividad, (int, float))
         or ahora.timestamp() - ultima_actividad >= duracion_sesion
     ):
         session.clear()
@@ -282,13 +281,6 @@ def login():
 def logout():
     session.clear()
     return redirect(url_for("login"))
-
-@app.route("/session-deadline")
-@login_requerido
-def session_deadline():
-    manana = date.today() + timedelta(days=1)
-    medianoche = datetime.combine(manana, time.min).timestamp()
-    return jsonify(expires_at=medianoche)
 
 # ==========================================
 # RUTAS DEL SISTEMA
